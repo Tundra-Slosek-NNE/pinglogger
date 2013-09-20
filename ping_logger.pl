@@ -1,5 +1,42 @@
 #!/usr/bin/perl
 
+=pod
+
+=head1 NAME
+
+ping_logger.pl
+
+=head1 DESCRIPTION
+
+ping_logger.pl is the second step of ping_logger. It runs on the logging host
+and stores the results from the testing hosts for later use by ping_report.pl.
+
+ping_logger.pl takes the data from the command line in the form of Base64
+encoded report and writes it to a data directory C</var/pinglogger/> that is
+hard coded. Within the data directory, a subdirectory is dedicated to this
+report named by the md5sum of the description within the report. If the
+subdirectory doesn't yet exist it will be created. Each report submitted is
+saved with the starttime within the report as the filename on the logging 
+host.
+
+=head1 DEPENDANCIES
+
+ping_logger.pl requires the following modules to already be in the local 
+Perl install:
+    
+=over 
+
+=item MIME::Base64
+
+=item Digest::MD5
+
+=item File::Spec
+
+=back
+
+=cut
+
+
 use MIME::Base64;
 use Digest::MD5 qw(md5_hex);
 use File::Spec;
