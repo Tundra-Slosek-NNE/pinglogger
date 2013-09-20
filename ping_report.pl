@@ -47,10 +47,28 @@ use File::Copy;
 use Statistics::Basic qw(:all nofill);
 use Number::Format;
 
-my $html_finalized = 0;
+my $configfile = "/etc/ping_report.conf";
 
+if ($ARGV[0]) {
+  if (-f $ARGV[0]) {
+    $configfile = $ARGV[0];
+  }
+  else {
+      print "Config file specified on command line '" . $ARGV[0] . "' not found as a file, trying to use default $configfile instead.\n";
+  }
+}
+
+if (-f $configfile) {
+    open(CONF, $ARGV[0]);
+}
+else {
+    die "No configuration file '$configfile' found, aborting.\n";
+}
+
+
+my $html_finalized = 0;
 my $reportstarttime = time;
-my $datumcutofftime = $reportstarttime - 3600;
+my $timerange = 3600;
 my $reporthumantime = localtime($reportstarttime);
 my @reporttime = localtime($reportstarttime);
 
@@ -60,28 +78,78 @@ my @simplesummary;
 
 my %datumstats;
 my $description;
+my $siteurl;
+my $sitename;
 
 my $datadir = "/var/pinglogger/";
-my $simplehtmlfile = "/var/www/status/index.html";
-my $htmlfile = "/var/www/status/details.html";
+my $simplehtmlfilename = "index.html";
+my $htmlfilename = "details.html";
 my $htmlpath = "/var/www/status/";
 
 my %datumreports;
 my %datumreportsimple;
 
+{
+    my $line;
+    while($line = <CONF>) {
+        $line =~ s/\#*\Z//;
+        $line =~ s/\s\Z//;
+        if ($line =~ m/=/) {
+        	my $key;
+        	my $value;
+        	($key, $value) = split('=', $line, 2);
+        	if (lc $key eq 'datadir') {
+        	    if (-d $value) {
+	                $datadir = $value;
+        	    }
+	        }
+	        elsif (lc $key eq 'htmlpath') {
+	            if (-d $value) {
+	                $htmlpath = $value;
+	            }
+	        }
+	        elsif (lc $key eq 'simplefile') {
+	            $simplehtmlfilename = $value;
+	        }
+	        elsif (lc $key eq 'siteurl') {
+	            $siteurl = $value;
+	        }
+	        elsif (lc $key eq 'sitename') {
+	            $sitename = $value;
+	        }
+	        elsif (lc $key eq 'detailfile') {
+	            $htmlfilename = $value;
+	        }
+	        elsif (lc $key eq 'timerange') {
+	            unless ($value =~ /\D/) {
+	                $timerange = $value;
+	            }
+	        }
+        }
+        else {
+        	# No equal sign? Ignore the line
+        }
+    }
+}
+close(CONF);
+
+my $datumcutofftime = $reportstarttime - $timerange;
+my $simplehtmlfile = File::Spec->catfile($htmlpath, $simplefilename);
+my $htmlfile = File::Spec->catfile($htmlpath, $htmlfilename);
+
 if (-d $datadir) {
     if (opendir(PARENT, $datadir)) {
 	my @data;
 	my $ent;
-	push (@finalhtml, '<html><title>NNE Network Status - Detail</title><body>');
-	push (@finalhtml, 'This report <a href="https://helpdesk.nnenews.com/status/details.html"><b>https://helpdesk.nnenews.com/status/details.html</b></a> generated starting at ' . $reporthumantime . ". This report is updated every five minutes.\n");
+	push (@finalhtml, '<html><title>' . $sitename .  ' Network Status - Detail</title><body>');
+	push (@finalhtml, 'This report <a href="' . $siteurl . $htmlfilename . '"><b>' . $siteurl . $htmlfilename . '</b></a> generated starting at ' . $reporthumantime . ". This report is updated every five minutes.\n");
 	push (@finalhtml, '<p>See <a href="https://helpdesk.nnenews.com/projects/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk for documentation (requires login).');
 	{
 	    my $year = $reporttime[5] + 1900;
 	    my $month = $reporttime[4] + 1;
 	    my $day = $reporttime[3];
 	    my $hour = $reporttime[2];
-	    my $url = sprintf('https://helpdesk.nnenews.com/status/%d/%d/%d/%d.html', $year, $month, $day, $hour) ;	    
+	    my $url = sprintf($siteurl . '/%d/%d/%d/%d.html', $year, $month, $day, $hour) ;	    
 	    push (@finalhtml, '<p>For historic access to this report, see <a href="' .$url . '">' . $url . '</a>');
 	}
 	while ($ent = readdir(PARENT)) {
@@ -152,7 +220,7 @@ if (-d $datadir) {
 	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
 	    , '</table>'
 	);
-	push (@simplehtml, '<a href="https://helpdesk.nnenews.com/status/details.html">More technical details</a> are available if needed.');
+	push (@simplehtml, '<a href="' . $siteurl . $htmlfilename . '">More technical details</a> are available if needed.');
 	push (@simplehtml, '</body></html>');
     }
     else {
