@@ -1,5 +1,44 @@
 #!/usr/bin/perl
 
+=pod
+
+=head1 NAME
+
+ping_report.pl
+
+=head1 DESCRIPTION
+
+ping_report.pl is the third and final step of ping_logger. It gathers all 
+reports that have come in and creates HTML summaries of them.
+
+Two summaries are created, one with few details intended for general users,
+another with full technical details intended for tech support staff. The
+general summary is overwriten each time that ping_report.pl is run. The
+detailed summary gets copied both to a fixed name as well as an hour based
+filename so that an archive of the hourly ones is built up over time.
+
+=head1 DEPENDANCIES
+
+ping_report.pl requires the following modules to already be in the local 
+Perl install:
+    
+=over 
+
+=item HTML::Template
+
+=item Statistics::Basic
+
+=item File::Spec
+
+=item File::Copy
+
+=item Number::Format
+
+=back
+
+=cut
+
+
 use strict;
 
 use HTML::Template;
