@@ -188,7 +188,7 @@ if ($target && $samples && $loghost && $description && $logcmd) {
     }
     if ($foundtimes) {
     	$stddev = stddev(@pingtimes);
-    	$pingtimeseld->paste(last_child => $root);
+    	$pingtimeselt->paste(last_child => $root);
     	my $elt = XML::Twig::Elt->new('Stddev',,$stddev);
     	$elt->paste(last_child => $root);
     }
