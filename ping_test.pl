@@ -176,6 +176,7 @@ if ($target && $samples && $loghost && $description && $logcmd) {
     @pingtimes = ();
     my $foundtimes = 0;
     my $pingtimeselt = XML::Twig::Elt->new('Pingtimes');
+    my $line;
     foreach $line (@resultlines) {
     	if ($line =~ /time=(\d+\.?\d*) ms/) {
     	    my $timesample = $1;
@@ -188,7 +189,7 @@ if ($target && $samples && $loghost && $description && $logcmd) {
     if ($foundtimes) {
     	$stddev = stddev(@pingtimes);
     	$root->paste(last_child => $pingtimeselt);
-    	my $elt = XML::Twig:Elt->new('Stddev',,$stddev);
+    	my $elt = XML::Twig::Elt->new('Stddev',,$stddev);
     	$root->paste(last_child => $elt);
     }
 
