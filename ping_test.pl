@@ -101,7 +101,7 @@ $root = XML::Twig::Elt->new();
 $twig->set_root($root);
 {
     my $elt = XML::Twig::Elt->new('Starttime',,$starttime);
-    $root->paste(last_child => $elt);
+    $elt->paste(last_child => $root);
 }
 
 {
@@ -116,17 +116,17 @@ $twig->set_root($root);
         	if (lc $key eq 'target') {
         	    $target = $value;
         	    my $elt = XML::Twig::Elt->new('Target',,$value);
-        	    $root->paste(last_child => $elt);
+        	    $elt->paste(last_child => $root);
         	}
         	elsif (lc $key eq 'samples') {
         	    $samples = $value;
         	    my $elt = XML::Twig::Elt->new('Samples',,$value);
-        	    $root->paste(last_child => $elt);
+        	    $elt->paste(last_child => $root);
         	}
         	elsif (lc $key eq 'description') {
         	    $description = $value;
         	    my $elt = XML::Twig::Elt->new('Description',,XML::Parser::Expat::xml_escape($value));
-        	    $root->paste(last_child => $elt);
+        	    $elt->paste(last_child => $root);
         	}
         	elsif (lc $key eq 'loghost') {
         	    $loghost = $value;
@@ -166,7 +166,7 @@ if ($target && $samples && $loghost && $description && $logcmd) {
     $result = `$pingcmd`;
     {
         my $elt = XML::Twig::Elt->new('#CDATA' => XML::Parser::Expat::xml_escape($result))->wrap_in('ResultsPacked');
-        $root->paste(last_child => $elt);
+        $elt->paste(last_child => $root);
     }
     @resultlines = split("\n", $result);
     $result_packed = $result;
@@ -182,15 +182,15 @@ if ($target && $samples && $loghost && $description && $logcmd) {
     	    my $timesample = $1;
     	    push(@pingtimes, $timesample);
     	    my $elt = XML::Twig::Elt->new('Time',,$timesample);
-    	    $pingtimeselt->paste(last_child => $elt);
+    	    $elt->paste(last_child => $pingtimeselt);
     	    $foundtimes = 1;
     	}
     }
     if ($foundtimes) {
     	$stddev = stddev(@pingtimes);
-    	$root->paste(last_child => $pingtimeselt);
+    	$pingtimeseld->paste(last_child => $root);
     	my $elt = XML::Twig::Elt->new('Stddev',,$stddev);
-    	$root->paste(last_child => $elt);
+    	$elt->paste(last_child => $root);
     }
 
 =pod
@@ -253,35 +253,35 @@ Any other form of ping output means that the results of the entire
     	    );
     	    {
     	        my $elt = XML::Twig::Elt->new('Ptrans',,$ptrans);
-    	        $root->paste(last_child => $elt);
+    	        $elt->paste(last_child => $root);
     	    }
     	    {
     	        my $elt = XML::Twig::Elt->new('Precv',,$precv);
-    	        $root->paste(last_child => $elt);
+    	        $elt->paste(last_child => $root);
     	    }
     	    {
     	        my $elt = XML::Twig::Elt->new('Ploss',,$ploss);
-    	        $root->paste(last_child => $elt);
+    	        $elt->paste(last_child => $root);
     	    }
     	    {
     	        my $elt = XML::Twig::Elt->new('Ptime',,$ptime);
-    	        $root->paste(last_child => $elt);
+    	        $elt->paste(last_child => $root);
     	    }
     	    {
     	        my $elt = XML::Twig::Elt->new('Rttmin',,$rttmin);
-    	        $root->paste(last_child => $elt);
+    	        $elt->paste(last_child => $root);
     	    }
     	    {
     	        my $elt = XML::Twig::Elt->new('Rttavg',,$rttavg);
-    	        $root->paste(last_child => $elt);
+    	        $elt->paste(last_child => $root);
     	    }
     	    {
     	        my $elt = XML::Twig::Elt->new('Rttmax',,$rttmax);
-    	        $root->paste(last_child => $elt);
+    	        $elt->paste(last_child => $root);
     	    }
     	    {
     	        my $elt = XML::Twig::Elt->new('Rttmdev',,$rttmdev);
-    	        $root->paste(last_child => $elt);
+    	        $elt->paste(last_child => $root);
     	    }
     
 =pod
