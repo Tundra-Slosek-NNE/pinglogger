@@ -125,7 +125,8 @@ $twig->set_root($root);
         	}
         	elsif (lc $key eq 'description') {
         	    $description = $value;
-        	    my $elt = XML::Twig::Elt->new('Description',,XML::Parser::Expat::xml_escape($value));
+                my $parser = XML::Parser::Expat->new();
+        	    my $elt = XML::Twig::Elt->new('Description',,$parser->xml_escape($value));
         	    $elt->paste(last_child => $root);
         	}
         	elsif (lc $key eq 'loghost') {
@@ -165,7 +166,8 @@ if ($target && $samples && $loghost && $description && $logcmd) {
     $pingcmd = "/bin/ping -n -c $samples $target";
     $result = `$pingcmd`;
     {
-        my $elt = XML::Twig::Elt->new('#CDATA' => XML::Parser::Expat::xml_escape($result))->wrap_in('ResultsPacked');
+        my $parser = XML::Parser::Expat->new();
+        my $elt = XML::Twig::Elt->new('#CDATA' => $parser->xml_escape($result))->wrap_in('ResultsPacked');
         $elt->paste(last_child => $root);
     }
     @resultlines = split("\n", $result);
