@@ -320,8 +320,16 @@ Any other form of ping output means that the results of the entire
     =back
     
     =cut
-    	    
-    	    system('/usr/bin/ssh', $loghost, $logcmd, encode_base64($submitreport, ''));
+            my $tosend; 
+            if (1) {
+        	    # xml version
+        	    $tosend = memBzip($root->sprint);
+            }
+            else {
+        	    # text version
+        	    $tosend = $submitreport;
+            }
+    	    system('/usr/bin/ssh', $loghost, $logcmd, encode_base64($tosend, ''));
     	}
     	else {
     	    die "Rttstats badly formatted: '$rttstats', aborting.\n";
