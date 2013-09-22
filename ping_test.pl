@@ -113,6 +113,8 @@ while ($line = <CONF>) {
 
 close(CONF);
 
+# TODO change from text in 'ini' format to xml->bz2 format.
+
 if ($target && $samples && $loghost && $description && $logcmd) {
     $pingcmd = "/bin/ping -n -c $samples $target";
     $result = `$pingcmd`;

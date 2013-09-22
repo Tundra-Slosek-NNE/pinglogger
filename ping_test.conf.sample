@@ -1,0 +1,20 @@
+target=mail.google.com
+
+# samples value should be less than the number of seconds between runs of
+# ping_test.pl
+samples=45
+
+# You will want to change this to the name or IP of the host where you will be
+# running ping_logger
+loghost=logger.example.com
+
+# If you have multiple ping_test.pl running, make sure each has a unique
+# description. If you change the description, the history stored by ping_logger
+# will not automatically follow along, though you can move it manually
+# Note - in ping_report, multiple tests are sorted by description when 
+# displayed
+description=My tester to mail.google.com
+
+# Enter as much of the path to ping_logger as is required by your loghost when
+# sshing in. 
+logcmd=/usr/local/bin/ping_logger.pl
