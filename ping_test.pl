@@ -23,20 +23,27 @@ Perl install:
 
 =item Statistics::Basic
 
+=item XML::Twig
+
+=item Compress::Bzip2
+
 =back
 
 =cut
 
+use strict;
 use MIME::Base64;
 use Statistics::Basic qw(:all nofill);
+use XML::Twig;
+use Compress::Bzip2;
 
-$starttime = time;
+my $starttime = time;
 
 if (-f $ARGV[0]) {
     open(CONF, $ARGV[0]);
 }
 else {
-    die "Configuration file not specified, aborting.\n";
+    die "Configuration file not specified on command line, aborting.\n";
 }
 
 =pod
@@ -82,55 +89,94 @@ the full path to ping_logger.pl
 
 =cut
 
+my $target;
+my $samples;
+my $loghost;
+my $description;
+my $logcmd;
+my $twig;
+$twig = XML::Twig->new();
+my $root;
+$root = XML::Twig::Elt->new();
+$twig->set_root($root);
+{
+    my $elt = XML::Twig::Elt->new('Starttime',,$starttime);
+    $root->paste(last_child => $elt);
+}
 
-while ($line = <CONF>) {
-    $line =~ s/\#*\Z//;
-    $line =~ s/\s\Z//;
-    if ($line =~ m/=/) {
-	my $key;
-	my $value;
-	($key, $value) = split('=', $line, 2);
-	if (lc $key eq 'target') {
-	    $target = $value;
-	}
-	elsif (lc $key eq 'samples') {
-	    $samples = $value;
-	}
-	elsif (lc $key eq 'loghost') {
-	    $loghost = $value;
-	}
-	elsif (lc $key eq 'description') {
-	    $description = $value;
-	}
-	elsif (lc $key eq 'logcmd') {
-	    $logcmd = $value;
-	}
-    }
-    else {
-	# No equal sign? Ignore the line
+{
+    my $line;
+    while ($line = <CONF>) {
+        $line =~ s/\#*\Z//;
+        $line =~ s/\s\Z//;
+        if ($line =~ m/=/) {
+        	my $key;
+        	my $value;
+        	($key, $value) = split('=', $line, 2);
+        	if (lc $key eq 'target') {
+        	    $target = $value;
+        	    my $elt = XML::Twig::Elt->new('Target',,$value);
+        	    $root->paste(last_child => $elt);
+        	}
+        	elsif (lc $key eq 'samples') {
+        	    $samples = $value;
+        	    my $elt = XML::Twig::Elt->new('Samples',,$value);
+        	    $root->paste(last_child => $elt);
+        	}
+        	elsif (lc $key eq 'description') {
+        	    $description = $value;
+        	    my $elt = XML::Twig::Elt->new('Description',,xml_escape($value));
+        	    $root->paste(last_child => $elt);
+        	}
+        	elsif (lc $key eq 'loghost') {
+        	    $loghost = $value;
+        	}
+        	elsif (lc $key eq 'logcmd') {
+        	    $logcmd = $value;
+        	}
+        }
+        else {
+    	# No equal sign? Ignore the line
+        }
     }
 }
 
 close(CONF);
 
-# TODO change from text in 'ini' format to xml->bz2 format.
 
 if ($target && $samples && $loghost && $description && $logcmd) {
+    my $pingcmd;
+    my $result;
+    my @resultlines;
+    my $result_packed;
     $pingcmd = "/bin/ping -n -c $samples $target";
     $result = `$pingcmd`;
+    {
+        my $elt = XML::Twig::Elt->new('#CDATA' => xml_escape($result))->wrap_in('ResultsPacked');
+        $root->paste(last_child => $elt);
+    }
     @resultlines = split("\n", $result);
     $result_packed = $result;
     $result_packed =~ s/\n/~~~/g;
     $rttstats = pop(@resultlines);
     $countstats = pop(@resultlines);
     @pingtimes = ();
+    my $foundtimes = 0;
+    my $pingtimeselt = XML::Twig::Elt->new('Pingtimes');
     foreach $line (@resultlines) {
-	if ($line =~ /time=(\d+\.?\d*) ms/) {
-	    push(@pingtimes, $1);
-	}
+    	if ($line =~ /time=(\d+\.?\d*) ms/) {
+    	    my $timesample = $1;
+    	    push(@pingtimes, $timesample);
+    	    my $elt = XML::Twig::Elt->new('Time',,$timesample);
+    	    $pingtimeselt->paste(last_child => $elt);
+    	    $foundtimes = 1;
+    	}
     }
-    if (@pingtimes) {
-	$stddev = stddev(@pingtimes);
+    if ($foundtimes) {
+    	$stddev = stddev(@pingtimes);
+    	$root->paste(last_child => $pingtimeselt);
+    	my $elt = XML::Twig:Elt->new('Stddev',,$stddev);
+    	$root->paste(last_child => $elt);
     }
 
 =pod
@@ -159,98 +205,130 @@ Any other form of ping output means that the results of the entire
 	    $rttstats = "";
     }
     if ($countstats =~ /\A(\d+) packets transmitted, (\d+) packets received, (\d+)\% packet loss\s*\Z/) {
-	$countstats = "$1 packets transmitted, $2 received, $3" . '% packet loss, time 0';
+    	$countstats = "$1 packets transmitted, $2 received, $3" . '% packet loss, time 0';
     }
     if ($countstats =~ /\A(\d+) packets transmitted, (\d+) received, (\d+)\% packet loss, time (\d+)/) {
-	$ptrans = $1;
-	$precv = $2;
-	$ploss = $3; 
-	$ptime = $4;
-	if ($rttstats =~ /\A\s*\Z/) {
-	    $rttstats = "rtt min/avg/max/mdev = 0.0/0.0/0.0 ms";
-	}
-	if ($rttstats =~ /\Around-trip min\/avg\/max = (.+)\/(.+)\/(.+) ms/) {
-	    $rttstats = "rtt min/avg/max/mdev = $1/$2/$3/0.0 ms";
-	}
-	if ($rttstats =~ /\Artt min\/avg\/max\/mdev = (.+) ms/) {
-	    ($rttmin, $rttavg, $rttmax, $rttmdev) = split('/', $1);
-	    $submitreport = join("\n",
-		'starttime=' . $starttime,
-		'target=' . $target,
-		'description=' . $description, 
-		'samples=' . $samples,
-		'ptrans=' . $ptrans,
-		'precv=' . $precv,
-		'ploss=' . $ploss,
-		'ptime=' . $ptime,
-		'rttmin=' . $rttmin,
-		'rttavg=' . $rttavg,
-		'rttmax=' . $rttmax,
-		'rttmdev=' . $rttmdev,
-		'stddev=' . $stddev,
-		'pingtimes=' . join(':', @pingtimes),
-		'resultpacked=' . $result_packed
-	    );
-
-=pod
-
-=head1 TRANSFER PROTOCOL / REPORT FORMAT
-
-After the ping results are gathered, they are sent to the I<loghost> by making
-a ssh connection as the current user to the I<loghost> and issuing the command
-I<logcmd> with one parameter - the report in Base64 encoding.
-
-The report itself is a series of key=value pairs generated with the following
-values: 
-
-=over
-
-=item starttime = The number of seconds since the start of the epoch when 
-ping_test.pl was started
-
-=item target = The value of I<target>
-
-=item description = The value of I<description>
-
-=item samples = The value of I<samples>
-
-=item ptrans = The number of packets actually transmitted - normally this would
-be equal to I<samples> unless the ping child command was killed before it 
-completed.
-
-=item precv = The number of packets received
-
-=item ploss = The number of packets that have been lost during the test. 
-
-=item ptime = The elapsed time of the ping test (not really useful)
-
-=item rttmin = The fastest ping out of the bunch
-
-=item rttagv = The average ping time
-
-=item rttmax = The slowest ping out of the bunch
-
-=item rttmdev = The mean deviatition as reported by ping
-
-=item stddev = The standard deviation as calculated by 
-Statistics::Basic->stddev
-
-=item pingtimes = The time of all samples delimited by colon (:)
-
-=item result_packet = The raw output from ping
-
-=back
-
-=cut
-	    
-	    system('/usr/bin/ssh', $loghost, $logcmd, encode_base64($submitreport, ''));
-	}
-	else {
-	    die "Rttstats badly formatted: '$rttstats', aborting.\n";
-	}
+    	$ptrans = $1;
+    	$precv = $2;
+    	$ploss = $3; 
+    	$ptime = $4;
+    	if ($rttstats =~ /\A\s*\Z/) {
+    	    $rttstats = "rtt min/avg/max/mdev = 0.0/0.0/0.0 ms";
+    	}
+    	if ($rttstats =~ /\Around-trip min\/avg\/max = (.+)\/(.+)\/(.+) ms/) {
+    	    $rttstats = "rtt min/avg/max/mdev = $1/$2/$3/0.0 ms";
+    	}
+    	if ($rttstats =~ /\Artt min\/avg\/max\/mdev = (.+) ms/) {
+    	    ($rttmin, $rttavg, $rttmax, $rttmdev) = split('/', $1);
+    	    $submitreport = join("\n",
+    		'starttime=' . $starttime,
+    		'target=' . $target,
+    		'description=' . $description, 
+    		'samples=' . $samples,
+    		'ptrans=' . $ptrans,
+    		'precv=' . $precv,
+    		'ploss=' . $ploss,
+    		'ptime=' . $ptime,
+    		'rttmin=' . $rttmin,
+    		'rttavg=' . $rttavg,
+    		'rttmax=' . $rttmax,
+    		'rttmdev=' . $rttmdev,
+    		'stddev=' . $stddev,
+    		'pingtimes=' . join(':', @pingtimes),
+    		'resultpacked=' . $result_packed
+    	    );
+    	    {
+    	        my $elt = XML::Twig::Elt->new('Ptrans',,$ptrans);
+    	        $root->paste(last_child => $elt);
+    	    }
+    	    {
+    	        my $elt = XML::Twig::Elt->new('Precv',,$precv);
+    	        $root->paste(last_child => $elt);
+    	    }
+    	    {
+    	        my $elt = XML::Twig::Elt->new('Ploss',,$ploss);
+    	        $root->paste(last_child => $elt);
+    	    }
+    	    {
+    	        my $elt = XML::Twig::Elt->new('Ptime',,$ptime);
+    	        $root->paste(last_child => $elt);
+    	    }
+    	    {
+    	        my $elt = XML::Twig::Elt->new('Rttmin',,$rttmin);
+    	        $root->paste(last_child => $elt);
+    	    }
+    	    {
+    	        my $elt = XML::Twig::Elt->new('Rttavg',,$rttavg);
+    	        $root->paste(last_child => $elt);
+    	    }
+    	    {
+    	        my $elt = XML::Twig::Elt->new('Rttmax',,$rttmax);
+    	        $root->paste(last_child => $elt);
+    	    }
+    	    {
+    	        my $elt = XML::Twig::Elt->new('Rttmdev',,$rttmdev);
+    	        $root->paste(last_child => $elt);
+    	    }
+    
+    =pod
+    
+    =head1 TRANSFER PROTOCOL / REPORT FORMAT
+    
+    After the ping results are gathered, they are sent to the I<loghost> by making
+    a ssh connection as the current user to the I<loghost> and issuing the command
+    I<logcmd> with one parameter - the report in Base64 encoding.
+    
+    The report itself is a series of key=value pairs generated with the following
+    values: 
+    
+    =over
+    
+    =item starttime = The number of seconds since the start of the epoch when 
+    ping_test.pl was started
+    
+    =item target = The value of I<target>
+    
+    =item description = The value of I<description>
+    
+    =item samples = The value of I<samples>
+    
+    =item ptrans = The number of packets actually transmitted - normally this would
+    be equal to I<samples> unless the ping child command was killed before it 
+    completed.
+    
+    =item precv = The number of packets received
+    
+    =item ploss = The number of packets that have been lost during the test. 
+    
+    =item ptime = The elapsed time of the ping test (not really useful)
+    
+    =item rttmin = The fastest ping out of the bunch
+    
+    =item rttagv = The average ping time
+    
+    =item rttmax = The slowest ping out of the bunch
+    
+    =item rttmdev = The mean deviatition as reported by ping
+    
+    =item stddev = The standard deviation as calculated by 
+    Statistics::Basic->stddev
+    
+    =item pingtimes = The time of all samples delimited by colon (:)
+    
+    =item result_packet = The raw output from ping
+    
+    =back
+    
+    =cut
+    	    
+    	    system('/usr/bin/ssh', $loghost, $logcmd, encode_base64($submitreport, ''));
+    	}
+    	else {
+    	    die "Rttstats badly formatted: '$rttstats', aborting.\n";
+    	}
     }
     else {
-	die "Countstats badly formatted: '$countstats', aborting.\n";
+    	die "Countstats badly formatted: '$countstats', aborting.\n";
     }
 }
 else {
