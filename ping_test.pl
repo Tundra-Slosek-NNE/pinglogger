@@ -149,6 +149,19 @@ if ($target && $samples && $loghost && $description && $logcmd) {
     my $result;
     my @resultlines;
     my $result_packed;
+    my $stddev;
+    my $rttstats;
+    my $countstats;
+    my $ptrans;
+    my $precv;
+    my $ploss;
+    my $ptime;
+    my $rttavg;
+    my $rttmin;
+    my $rttmax;
+    my $rttmdev;
+    my @pingtimes;
+    my $submitreport;
     $pingcmd = "/bin/ping -n -c $samples $target";
     $result = `$pingcmd`;
     {
@@ -270,56 +283,56 @@ Any other form of ping output means that the results of the entire
     	        $root->paste(last_child => $elt);
     	    }
     
-    =pod
-    
-    =head1 TRANSFER PROTOCOL / REPORT FORMAT
-    
-    After the ping results are gathered, they are sent to the I<loghost> by making
-    a ssh connection as the current user to the I<loghost> and issuing the command
-    I<logcmd> with one parameter - the report in Base64 encoding.
-    
-    The report itself is a series of key=value pairs generated with the following
-    values: 
-    
-    =over
-    
-    =item starttime = The number of seconds since the start of the epoch when 
-    ping_test.pl was started
-    
-    =item target = The value of I<target>
-    
-    =item description = The value of I<description>
-    
-    =item samples = The value of I<samples>
-    
-    =item ptrans = The number of packets actually transmitted - normally this would
-    be equal to I<samples> unless the ping child command was killed before it 
-    completed.
-    
-    =item precv = The number of packets received
-    
-    =item ploss = The number of packets that have been lost during the test. 
-    
-    =item ptime = The elapsed time of the ping test (not really useful)
-    
-    =item rttmin = The fastest ping out of the bunch
-    
-    =item rttagv = The average ping time
-    
-    =item rttmax = The slowest ping out of the bunch
-    
-    =item rttmdev = The mean deviatition as reported by ping
-    
-    =item stddev = The standard deviation as calculated by 
-    Statistics::Basic->stddev
-    
-    =item pingtimes = The time of all samples delimited by colon (:)
-    
-    =item result_packet = The raw output from ping
-    
-    =back
-    
-    =cut
+=pod
+
+=head1 TRANSFER PROTOCOL / REPORT FORMAT
+
+After the ping results are gathered, they are sent to the I<loghost> by making
+a ssh connection as the current user to the I<loghost> and issuing the command
+I<logcmd> with one parameter - the report in Base64 encoding.
+
+The report itself is a series of key=value pairs generated with the following
+values: 
+
+=over
+
+=item starttime = The number of seconds since the start of the epoch when 
+ping_test.pl was started
+
+=item target = The value of I<target>
+
+=item description = The value of I<description>
+
+=item samples = The value of I<samples>
+
+=item ptrans = The number of packets actually transmitted - normally this would
+be equal to I<samples> unless the ping child command was killed before it 
+completed.
+
+=item precv = The number of packets received
+
+=item ploss = The number of packets that have been lost during the test. 
+
+=item ptime = The elapsed time of the ping test (not really useful)
+
+=item rttmin = The fastest ping out of the bunch
+
+=item rttagv = The average ping time
+
+=item rttmax = The slowest ping out of the bunch
+
+=item rttmdev = The mean deviatition as reported by ping
+
+=item stddev = The standard deviation as calculated by 
+Statistics::Basic->stddev
+
+=item pingtimes = The time of all samples delimited by colon (:)
+
+=item result_packet = The raw output from ping
+
+=back
+
+=cut
             my $tosend; 
             if (1) {
         	    # xml version
