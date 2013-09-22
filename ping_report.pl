@@ -134,7 +134,7 @@ my %datumreportsimple;
 close(CONF);
 
 my $datumcutofftime = $reportstarttime - $timerange;
-my $simplehtmlfile = File::Spec->catfile($htmlpath, $simplefilename);
+my $simplehtmlfile = File::Spec->catfile($htmlpath, $simplehtmlfilename);
 my $htmlfile = File::Spec->catfile($htmlpath, $htmlfilename);
 
 if (-d $datadir) {
