@@ -97,7 +97,11 @@ my $logcmd;
 my $twig;
 $twig = XML::Twig->new();
 my $root;
-$root = XML::Twig::Elt->new();
+$root = XML::Twig::Elt->new('PingResult');
+{
+    my $elt = XML::Twig::Elt->new('FormatVersion',,2);
+    $elt->paste(last_child => $root);
+}
 $twig->set_root($root);
 {
     my $elt = XML::Twig::Elt->new('Starttime',,$starttime);
