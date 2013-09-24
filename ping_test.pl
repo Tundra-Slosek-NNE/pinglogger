@@ -214,7 +214,7 @@ the second to the last line of output:
 
 =back
 
-Any other form of ping output means that the results of the entire 
+Any other form of ping output means that the results of the entire test
  will be discarded.
 
 =cut
