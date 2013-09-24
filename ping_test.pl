@@ -172,7 +172,6 @@ if ($target && $samples && $loghost && $description && $logcmd) {
     my $rttmax;
     my $rttmdev;
     my @pingtimes;
-    my $submitreport;
     $pingcmd = "/bin/ping -n -c $samples $target";
     $result = `$pingcmd`;
     {
@@ -246,23 +245,6 @@ Any other form of ping output means that the results of the entire test
     	}
     	if ($rttstats =~ /\Artt min\/avg\/max\/mdev = (.+) ms/) {
     	    ($rttmin, $rttavg, $rttmax, $rttmdev) = split('/', $1);
-    	    $submitreport = join("\n",
-    		'starttime=' . $starttime,
-    		'target=' . $target,
-    		'description=' . $description, 
-    		'samples=' . $samples,
-    		'ptrans=' . $ptrans,
-    		'precv=' . $precv,
-    		'ploss=' . $ploss,
-    		'ptime=' . $ptime,
-    		'rttmin=' . $rttmin,
-    		'rttavg=' . $rttavg,
-    		'rttmax=' . $rttmax,
-    		'rttmdev=' . $rttmdev,
-    		'stddev=' . $stddev,
-    		'pingtimes=' . join(':', @pingtimes),
-    		'resultpacked=' . $result_packed
-    	    );
     	    {
     	        my $elt = XML::Twig::Elt->new('Ptrans',,$ptrans);
     	        $elt->paste(last_child => $root);
@@ -352,14 +334,7 @@ Statistics::Basic->stddev
 
 =cut
             my $tosend; 
-            if (1) {
-        	    # xml version
-        	    $tosend = memBzip($twig->sprint);
-            }
-            else {
-        	    # text version
-        	    $tosend = $submitreport;
-            }
+    	    $tosend = memBzip($twig->sprint);
     	    system('/usr/bin/ssh', $loghost, $logcmd, encode_base64($tosend, ''));
     	}
     	else {
