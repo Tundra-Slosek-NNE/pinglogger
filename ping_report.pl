@@ -34,6 +34,10 @@ Perl install:
 
 =item Number::Format
 
+=item XML::Twig
+
+=item Compress::Bzip2
+
 =back
 
 =cut
@@ -46,6 +50,8 @@ use File::Spec;
 use File::Copy;
 use Statistics::Basic qw(:all nofill);
 use Number::Format;
+use XML::Twig;
+use Compress::Bzip2;
 
 my $configfile = "/etc/ping_report.conf";
 
@@ -54,7 +60,8 @@ if ($ARGV[0]) {
     $configfile = $ARGV[0];
   }
   else {
-      print "Config file specified on command line '" . $ARGV[0] . "' not found as a file, trying to use default $configfile instead.\n";
+      print "Config file specified on command line '" . $ARGV[0] 
+      . "' not found as a file, trying to use default $configfile instead.\n";
   }
 }
 
@@ -141,16 +148,23 @@ if (-d $datadir) {
     if (opendir(PARENT, $datadir)) {
 	my @data;
 	my $ent;
-	push (@finalhtml, '<html><title>' . $sitename .  ' Network Status - Detail</title><body>');
-	push (@finalhtml, 'This report <a href="' . $siteurl . $htmlfilename . '"><b>' . $siteurl . $htmlfilename . '</b></a> generated starting at ' . $reporthumantime . ". This report is updated every five minutes.\n");
-	push (@finalhtml, '<p>See <a href="https://helpdesk.nnenews.com/projects/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk for documentation (requires login).');
+	push (@finalhtml, '<html><title>' . $sitename 
+	    .  ' Network Status - Detail</title><body>');
+	push (@finalhtml, 'This report <a href="' . $siteurl . $htmlfilename 
+	    . '"><b>' . $siteurl . $htmlfilename . '</b></a> generated starting at ' 
+	    . $reporthumantime . ". This report is updated every five minutes.\n");
+	push (@finalhtml, '<p>See <a href="https://helpdesk.nnenews.com/projects' 
+	    . '/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk ' 
+	    . ' for documentation (requires login).');
 	{
 	    my $year = $reporttime[5] + 1900;
 	    my $month = $reporttime[4] + 1;
 	    my $day = $reporttime[3];
 	    my $hour = $reporttime[2];
-	    my $url = sprintf($siteurl . '/%d/%d/%d/%d.html', $year, $month, $day, $hour) ;	    
-	    push (@finalhtml, '<p>For historic access to this report, see <a href="' .$url . '">' . $url . '</a>');
+	    my $url = sprintf($siteurl . '/%d/%d/%d/%d.html', $year, $month
+	        , $day, $hour) ;	    
+	    push (@finalhtml, '<p>For historic access to this report, see <a href="'
+	        .$url . '">' . $url . '</a>');
 	}
 	while ($ent = readdir(PARENT)) {
 	    unless ($ent =~ m/[^[:xdigit:]]/) {
@@ -530,137 +544,191 @@ sub process_file($$) {
     my $datum = shift;
     my $file = shift;
     my $filemodtime = shift;
-    if (open(FILE, $file)) {
-	my $line;
-	my $starttime ; 
-	my $target ;
-	my $description ;
-	my $samples ;
-	my $ptrans ;
-	my $precv ;
-	my $ploss ;
-	my $ptime ;
-	my $rttmin ;
-	my $rttmax ;
-	my $rttavg ;
-	my $rttmdev ;
-	my $stddev ;
-	my $pingtimes ;
-
-	while($line = <FILE>) {
-	    $line =~ s/\s+\Z//;
-	    if ($line =~ m/=/) {
-		my $key;
-		my $value;
-		($key, $value) = split('=', $line);
-		if (lc $key eq 'starttime') {
-		    $starttime = $value; 
-		}
-		elsif (lc $key eq 'target') {
-		    $target = $value;
-		}
-		elsif (lc $key eq 'description') {
-		    $description = $value;
-		}
-		elsif (lc $key eq 'samples') {
-		    $samples = $value;
-		}
-		elsif (lc $key eq 'ptrans') {
-		    $ptrans = $value;
-		}
-		elsif (lc $key eq 'precv') {
-		    $precv = $value;
-		}
-		elsif (lc $key eq 'ploss') {
-		    $ploss = $value;
-		}
-		elsif (lc $key eq 'ptime') {
-		    $ptime = $value;
-		}
-		elsif (lc $key eq 'rttmin') {
-		    $rttmin = $value;
-		}
-		elsif (lc $key eq 'rttmax') {
-		    $rttmax = $value;
-		}
-		elsif (lc $key eq 'rttavg') {
-		    $rttavg = $value;
-		}
-		elsif (lc $key eq 'rttmdev') {
-		    $rttmdev = $value;
-		}
-		elsif (lc $key eq 'stddev') {
-		    $stddev = $value;
-		}
-		elsif (lc $key eq 'pingtimes') {
-		    $pingtimes = $value;
-		}
-	    }
-	}
-	close(FILE);
-	
-	unless ($pingtimes =~ /\S/) {
-	    push(@finalhtml, '<!-- For $file, pingtimes is empty. -->' . "\n");
-	}
-	
-	push(@finalhtml, '<!-- set bins - ' . $filemodtime . ':' . $file . ' pt:' . $ptrans . ' pr:' . $precv . ' rawsamp:' . $pingtimes ."-->\n") ;
-	$bins{$filemodtime} = $ptrans . ':' . $precv; 
-	$rawsamples{$filemodtime} = $pingtimes;
-	
-	$datumstats{'description'} = $description;
-	$datumstats{'target'} = $target;
-	
-	if (exists($datumstats{'pingtests_considered'})) {
-	    $datumstats{'pingtests_considered'} += 1;
-	}
-	else {
-	    $datumstats{'pingtests_considered'} = 1;
-	}
-	
-	if (exists($datumstats{'rttmax'})) {
-	    if ($datumstats{'rttmax'} < $rttmax) {
-		$datumstats{'rttmax'} = $rttmax;		
-	    }
-	}
-	else {
-	    $datumstats{'rttmax'} = $rttmax;
-	}
-	
-	if (exists($datumstats{'rttmin'})) {
-	    if ($datumstats{'rttmin'} > $rttmin) {
-		$datumstats{'rttmin'} = $rttmin;		
-	    }
-	}
-	else {
-	    $datumstats{'rttmin'} = $rttmin;
-	}
-	
-	if (exists($datumstats{'rttavgaccum'})) {
-	    $datumstats{'rttavgaccum'} += $rttavg;
-	}
-	else {
-	    $datumstats{'rttavgaccum'} = $rttavg;
-	}
-	
-	if (exists($datumstats{'ptranstotal'})) {
-	    $datumstats{'ptranstotal'} += $ptrans;
-	}
-	else {
-	    $datumstats{'ptranstotal'} = $ptrans;
-	}
-	
-	if (exists($datumstats{'precvtotal'})) {
-	    $datumstats{'precvtotal'} += $precv;
-	}
-	else {
-	    $datumstats{'precvtotal'} = $precv;
-	}
-	
-	$datumstats{'overall_ploss'} = ($datumstats{'ptranstotal'} - $datumstats{'precvtotal'}) / $datumstats{'ptranstotal'}
-	
+    my $twig = XML::Twig->new();
+    if ($twig->safe_parsefile($file)) {
+    	my $line;
+    	my $starttime ; 
+    	my $target ;
+    	my $description ;
+    	my $samples ;
+    	my $ptrans ;
+    	my $precv ;
+    	my $ploss ;
+    	my $ptime ;
+    	my $rttmin ;
+    	my $rttmax ;
+    	my $rttavg ;
+    	my $rttmdev ;
+    	my $stddev ;
+    	my $pingtimes ;
+    	
+    	my $root;
+    	$root = $twig->root;
+    	{
+    	    my $version = $root->first_child_text('FormatVersion');
+    	    if ($version != 2) {
+    	        logmsg("File '$file' not in Format Version 2, skipping.\n", 0);
+    	        return;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Starttime');
+	        $starttime = $value;
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Target');
+	        $target = $value;
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Description');
+	        $description = $value;
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Samples');
+    	    unless ($value =~ /\D/) {
+    	        $samples = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Ptrans');
+    	    unless ($value =~ /\D/) {
+    	        $ptrans = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Precv');
+    	    unless ($value =~ /\D/) {
+    	        $precv = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Ploss');
+    	    unless ($value =~ /\D/) {
+    	        $ploss = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Ptime');
+    	    unless ($value =~ /\D/) {
+    	        $ptime = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Rttmin');
+    	    unless ($value =~ /\D/) {
+    	        $rttmin = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Rttmax');
+    	    unless ($value =~ /\D/) {
+    	        $rttmax = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Rttavg');
+    	    unless ($value =~ /\D/) {
+    	        $rttavg = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Rttmdev');
+    	    unless ($value =~ /\D/) {
+    	        $rttmdev = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    $value = $root->first_child_text('Stddev');
+    	    unless ($value =~ /\D/) {
+    	        $stddev = $value;
+    	    }  
+    	}
+    	{
+    	    my $value;
+    	    my $timesample;
+    	    my @these_times;
+    	    $pingtime_element = $root->first_child_text('Pingtimes');
+    	    foreach $timesample ($pingtime_element->children('Time')) {
+    	        push(@these_times, $timesample->child_text());
+    	    }   
+    	    $pingtimes = join(':', @these_times);
+    	}
+    
+    	unless ($pingtimes =~ /\S/) {
+    	    push(@finalhtml, '<!-- For $file, <Pingtimes> is empty. -->' . "\n");
+    	}
+    	
+    	push(@finalhtml, '<!-- set bins - ' . $filemodtime . ':' . $file . ' pt:' . $ptrans . ' pr:' . $precv . ' rawsamp:' . $pingtimes ."-->\n") ;
+    	$bins{$filemodtime} = $ptrans . ':' . $precv; 
+    	$rawsamples{$filemodtime} = $pingtimes;
+    	
+    	$datumstats{'description'} = $description;
+    	$datumstats{'target'} = $target;
+    	
+    	if (exists($datumstats{'pingtests_considered'})) {
+    	    $datumstats{'pingtests_considered'} += 1;
+    	}
+    	else {
+    	    $datumstats{'pingtests_considered'} = 1;
+    	}
+    	
+    	if (exists($datumstats{'rttmax'})) {
+    	    if ($datumstats{'rttmax'} < $rttmax) {
+    		$datumstats{'rttmax'} = $rttmax;		
+    	    }
+    	}
+    	else {
+    	    $datumstats{'rttmax'} = $rttmax;
+    	}
+    	
+    	if (exists($datumstats{'rttmin'})) {
+    	    if ($datumstats{'rttmin'} > $rttmin) {
+    		$datumstats{'rttmin'} = $rttmin;		
+    	    }
+    	}
+    	else {
+    	    $datumstats{'rttmin'} = $rttmin;
+    	}
+    	
+    	if (exists($datumstats{'rttavgaccum'})) {
+    	    $datumstats{'rttavgaccum'} += $rttavg;
+    	}
+    	else {
+    	    $datumstats{'rttavgaccum'} = $rttavg;
+    	}
+    	
+    	if (exists($datumstats{'ptranstotal'})) {
+    	    $datumstats{'ptranstotal'} += $ptrans;
+    	}
+    	else {
+    	    $datumstats{'ptranstotal'} = $ptrans;
+    	}
+    	
+    	if (exists($datumstats{'precvtotal'})) {
+    	    $datumstats{'precvtotal'} += $precv;
+    	}
+    	else {
+    	    $datumstats{'precvtotal'} = $precv;
+    	}
+    	
+    	$datumstats{'overall_ploss'} = ($datumstats{'ptranstotal'} - $datumstats{'precvtotal'}) / $datumstats{'ptranstotal'}
+    	
     }	
     else {
-	logmsg("Error opening '$file', skipping.\n", 0);
+	    logmsg("Error '" . $@ . "' when attempting to parse XML file '$file', skipping.\n", 0);
     }
 }
 
