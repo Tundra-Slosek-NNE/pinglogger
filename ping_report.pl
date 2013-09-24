@@ -503,7 +503,7 @@ sub process_file($$) {
     	    my @these_times;
     	    my $pingtime_element = $root->first_child('Pingtimes');
     	    foreach $timesample ($pingtime_element->children('Time')) {
-    	        push(@these_times, $timesample->child_text());
+    	        push(@these_times, $timesample->text());
     	    }   
     	    $pingtimes = join(':', @these_times);
     	}
