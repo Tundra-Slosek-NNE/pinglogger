@@ -222,7 +222,7 @@ if ($starttime && $description) {
     	    die "Unable to create directory $dirname, aborting.\n";
     	}
     }
-    my $filename = File::Spec->catfile($dirname, $starttime);
+    my $filename = File::Spec->catfile($dirname, $starttime . ".xml");
     
     if (open(DATAFILE, '>' . $filename)) {
     	print DATAFILE $rawreport;
