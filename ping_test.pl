@@ -343,7 +343,7 @@ Statistics::Basic->stddev
             my $tosend; 
             if (1) {
         	    # xml version
-        	    $tosend = memBzip($root->sprint);
+        	    $tosend = memBzip($twig->sprint);
             }
             else {
         	    # text version
