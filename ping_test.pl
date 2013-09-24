@@ -39,8 +39,14 @@ use Compress::Bzip2;
 
 my $starttime = time;
 
-if (-f $ARGV[0]) {
-    open(CONF, $ARGV[0]);
+if ($ARGV[0]) {
+    if (-f $ARGV[0]) {
+        open(CONF, $ARGV[0]);
+    }
+    else {
+        die "Specified configuration file '" . $ARGV[0] 
+            . "' is not a file, aborting.\n";
+    }
 }
 else {
     die "Configuration file not specified on command line, aborting.\n";
