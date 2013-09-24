@@ -501,7 +501,7 @@ sub process_file($$) {
     	    my $value;
     	    my $timesample;
     	    my @these_times;
-    	    my $pingtime_element = $root->first_child_text('Pingtimes');
+    	    my $pingtime_element = $root->first_child('Pingtimes');
     	    foreach $timesample ($pingtime_element->children('Time')) {
     	        push(@these_times, $timesample->child_text());
     	    }   
