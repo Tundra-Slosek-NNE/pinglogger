@@ -102,6 +102,47 @@ sub logmsg($$) {
 
 sub finalize_html() {
     $html_finalized = 1;
+    # Variables for Template::Toolkit
+    # sites a description sorted array of site. Site is the summary of data 
+    #     for the entire hour.
+    #  site.style = CSS style for the header for this site
+    #  site.name = Description of this site
+    #  site.plosspercent = Percentage of packets lost for this site, includes
+    #                      percent sign
+    #  site.jitter = Jitter for this site
+    #  site.tests = The number of report files found in the hour
+    #  site.target = The remote host that was pinged
+    #  site.packets_sent = The total ping packet sent to the target
+    #  site.packets_recv = The number of packets received back in the hour
+    #  site.rttavg = Average round trip time of packets received
+    #  site.rttmin = Shortest round trip time of packets received
+    #  site.netlength = 1/2 rttmin/speed of light
+    #  site.ploss = The number of packets lost in the hour (diff between sent 
+    #               and recv
+    #  site.datadir = Full path to site specific directory where results are
+    #                 stored
+    #  site.firsttime = Earliest timestamp on a report file that goes into the 
+    #                   results
+    #  site.lasttime = Latest timestamp on a report file that goes into the 
+    #                  results
+    #  minors = time sorted array of smallest summarized 
+    #           units (baseline 5min increments)
+    #    minor.age = age in minutes of the most recent sample in minor rounded 
+    #                to 5 minute buckets
+    #    minor.psent = packets sent within the minor
+    #    minor.precv = packets received within the minor
+    #    minor.jitter = jitter within the minor
+    #    minor.plosspercent = packet loss as percent within the minor, 
+    #                         including sign
+    #    minor.ploss = packet loss within the minor in units of packets
+    #    minor.startage = actual earliest timestamp in seconds ago
+    #    minor.endage = actual latest timestamp in seconds ago
+    #  majors = time sorted array of larger summarized units 
+    #           (baseline 15min increments)
+    #    same variables as minors, but for 15min range instead of 5min range
+    #    plus
+    #    major.factor = the number of minor samples that go into each major
+    #                   so for 5min/15min, the factor = 3
     if (open(HTML, '>'.$htmlfile)) {
 	print HTML join("\n", @finalhtml);
 	close(HTML);
