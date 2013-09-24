@@ -298,44 +298,49 @@ After the ping results are gathered, they are sent to the I<loghost> by making
 a ssh connection as the current user to the I<loghost> and issuing the command
 I<logcmd> with one parameter - the report in Base64 encoding.
 
-The report itself is a series of key=value pairs generated with the following
-values: 
+The report itself is an XML file that is bzip2 compressed with the following
+tags (the order listed here is not the order they are writen to the XML file): 
 
 =over
 
-=item starttime = The number of seconds since the start of the epoch when 
+=item PingResult = this is the root element to the XML tree
+
+=item FormatVersion = the value 2 - the prior format was implied to be 
+version 1, but was not listed anywhere within the file itself.
+
+=item Starttime = The number of seconds since the start of the epoch when 
 ping_test.pl was started
 
-=item target = The value of I<target>
+=item Target = The value of I<target>
 
-=item description = The value of I<description>
+=item Description = The value of I<description>
 
-=item samples = The value of I<samples>
+=item Samples = The value of I<samples>
 
-=item ptrans = The number of packets actually transmitted - normally this would
+=item Ptrans = The number of packets actually transmitted - normally this would
 be equal to I<samples> unless the ping child command was killed before it 
 completed.
 
-=item precv = The number of packets received
+=item Precv = The number of packets received
 
-=item ploss = The number of packets that have been lost during the test. 
+=item Ploss = The number of packets that have been lost during the test. 
 
-=item ptime = The elapsed time of the ping test (not really useful)
+=item Ptime = The elapsed time of the ping test (not really useful)
 
-=item rttmin = The fastest ping out of the bunch
+=item Rttmin = The fastest ping out of the bunch
 
-=item rttagv = The average ping time
+=item Rttagv = The average ping time
 
-=item rttmax = The slowest ping out of the bunch
+=item Rttmax = The slowest ping out of the bunch
 
-=item rttmdev = The mean deviatition as reported by ping
+=item Rttmdev = The mean deviatition as reported by ping
 
-=item stddev = The standard deviation as calculated by 
+=item Stddev = The standard deviation as calculated by 
 Statistics::Basic->stddev
 
-=item pingtimes = The time of all samples delimited by colon (:)
+=item Pingtimes = The time of all samples as child <Time> tags
 
-=item result_packet = The raw output from ping
+=item ResultsPacked = The raw output from ping
 
 =back
 
