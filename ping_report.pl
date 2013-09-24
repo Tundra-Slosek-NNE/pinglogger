@@ -42,7 +42,6 @@ Perl install:
 
 =cut
 
-
 use strict;
 
 use HTML::Template;
@@ -53,25 +52,9 @@ use Number::Format;
 use XML::Twig;
 use Compress::Bzip2;
 
+# Start of global variable definitions
+
 my $configfile = "/etc/ping_report.conf";
-
-if ($ARGV[0]) {
-  if (-f $ARGV[0]) {
-    $configfile = $ARGV[0];
-  }
-  else {
-      print "Config file specified on command line '" . $ARGV[0] 
-      . "' not found as a file, trying to use default $configfile instead.\n";
-  }
-}
-
-if (-f $configfile) {
-    open(CONF, $ARGV[0]);
-}
-else {
-    die "No configuration file '$configfile' found, aborting.\n";
-}
-
 
 my $html_finalized = 0;
 my $reportstarttime = time;
@@ -96,155 +79,16 @@ my $htmlpath = "/var/www/status/";
 my %datumreports;
 my %datumreportsimple;
 
-{
-    my $line;
-    while($line = <CONF>) {
-        $line =~ s/\#*\Z//;
-        $line =~ s/\s\Z//;
-        if ($line =~ m/=/) {
-        	my $key;
-        	my $value;
-        	($key, $value) = split('=', $line, 2);
-        	if (lc $key eq 'datadir') {
-        	    if (-d $value) {
-	                $datadir = $value;
-        	    }
-	        }
-	        elsif (lc $key eq 'htmlpath') {
-	            if (-d $value) {
-	                $htmlpath = $value;
-	            }
-	        }
-	        elsif (lc $key eq 'simplefile') {
-	            $simplehtmlfilename = $value;
-	        }
-	        elsif (lc $key eq 'siteurl') {
-	            $siteurl = $value;
-	        }
-	        elsif (lc $key eq 'sitename') {
-	            $sitename = $value;
-	        }
-	        elsif (lc $key eq 'detailfile') {
-	            $htmlfilename = $value;
-	        }
-	        elsif (lc $key eq 'timerange') {
-	            unless ($value =~ /\D/) {
-	                $timerange = $value;
-	            }
-	        }
-        }
-        else {
-        	# No equal sign? Ignore the line
-        }
-    }
-}
-close(CONF);
+my %bins;
+my %rawsamples; 
 
-my $datumcutofftime = $reportstarttime - $timerange;
-my $simplehtmlfile = File::Spec->catfile($htmlpath, $simplehtmlfilename);
-my $htmlfile = File::Spec->catfile($htmlpath, $htmlfilename);
+my $htmlfile;
+my $simplehtmlfile;
+my $datumcutofftime;
 
-if (-d $datadir) {
-    if (opendir(PARENT, $datadir)) {
-	my @data;
-	my $ent;
-	push (@finalhtml, '<html><title>' . $sitename 
-	    .  ' Network Status - Detail</title><body>');
-	push (@finalhtml, 'This report <a href="' . $siteurl . $htmlfilename 
-	    . '"><b>' . $siteurl . $htmlfilename . '</b></a> generated starting at ' 
-	    . $reporthumantime . ". This report is updated every five minutes.\n");
-	push (@finalhtml, '<p>See <a href="https://helpdesk.nnenews.com/projects' 
-	    . '/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk ' 
-	    . ' for documentation (requires login).');
-	{
-	    my $year = $reporttime[5] + 1900;
-	    my $month = $reporttime[4] + 1;
-	    my $day = $reporttime[3];
-	    my $hour = $reporttime[2];
-	    my $url = sprintf($siteurl . '/%d/%d/%d/%d.html', $year, $month
-	        , $day, $hour) ;	    
-	    push (@finalhtml, '<p>For historic access to this report, see <a href="'
-	        .$url . '">' . $url . '</a>');
-	}
-	while ($ent = readdir(PARENT)) {
-	    unless ($ent =~ m/[^[:xdigit:]]/) {
-		my $datum;
-		$datum = File::Spec->catdir($datadir, $ent); 
-		if (-d $datum) {
-		    push (@data, $datum); 
-		}
-		else {
-		    # silently ignore non directories
-		}
-	    }
-	    else {
-		# silently ignore anything with nonnumerics in the name
-	    }
-	}
-	closedir(PARENT);
-	{
-	    my $datum;
-	    foreach $datum (@data) {
-		process_datum($datum);
-	    }
-	}
-	{
-	    my $key;
-	    my $alt = 0;
-	    push(@simplehtml, '<table border="1" style="border:none;border-collapse:collapse">');
-	    foreach $key (sort keys %datumreports) {
-		push (@finalhtml, $datumreports{$key});
-		if ($datumreportsimple{$key} =~ /\S/) {
-		    if ($alt == 0) {
-			push(@simplehtml, '<tr>');
-		    }
-		    push(@simplehtml, '<td style="vertical-align: top">');
-		    push(@simplehtml, '<!-- ' . $key .  ' -->');
-		    push (@simplehtml, $datumreportsimple{$key});
-		    push(@simplehtml, '</td>');
-		    if ($alt == 0) {
-			$alt = 1;
-		    }
-		    else {
-			$alt = 0;
-			push(@simplehtml, '</tr>');
-		    }
-		}
-	    }
-	    push(@simplehtml, '</table>');
-	}
-	push (@finalhtml, '<hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>'
-	    , '<tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>'
-	    , '<tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>'
-	    , '<tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>'
-	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
-	    , '</table>'
-	    , '<hr>Note about netlength: this is half of the distance light could travel in a vacuum during the fastest ping time. ' 
-	      . "Since the packets travel via a mix of copper as electrical impules and fiber as light pulses for the majority of their travel distance, "
-	      . "thier flighttime will always be slower than speed of light through a vacuum. Additionally, routing and switching equipment will always "
-	      . "impose a significant overhead, so the netlength is only a very crude measurement."
-	      . "For reference, Google Maps shows a driving distance from CM to Chandler of 2633miles or 4237km, and an estimate of travel time at highway speeds of 41hrs." 
-	    
-	);
-	push (@finalhtml, '</body></html>');
-	push (@simplehtml, '<hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>'
-	    , '<tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>'
-	    , '<tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>'
-	    , '<tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>'
-	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
-	    , '</table>'
-	);
-	push (@simplehtml, '<a href="' . $siteurl . $htmlfilename . '">More technical details</a> are available if needed.');
-	push (@simplehtml, '</body></html>');
-    }
-    else {
-	logmsg("Unable to open datadirectory '$datadir', aborting.\n",1);
-    }
-}
-else {
-    logmsg("Specified Datadirectory '$datadir' is not a directory, aborting.\n",1); 
-}
+# No more global variables should be declared beyond here
 
+# Start of subroutine definitions
 
 sub logmsg($$) {
     my $msg = shift;
@@ -295,9 +139,6 @@ sub finalize_html() {
     }
 }
 
-my %datumstats; 
-my %bins;
-my %rawsamples; 
 
 sub process_datum($) {
     my $datum = shift;   
@@ -660,7 +501,7 @@ sub process_file($$) {
     	    my $value;
     	    my $timesample;
     	    my @these_times;
-    	    $pingtime_element = $root->first_child_text('Pingtimes');
+    	    my $pingtime_element = $root->first_child_text('Pingtimes');
     	    foreach $timesample ($pingtime_element->children('Time')) {
     	        push(@these_times, $timesample->child_text());
     	    }   
@@ -731,6 +572,175 @@ sub process_file($$) {
 	    logmsg("Error '" . $@ . "' when attempting to parse XML file '$file', skipping.\n", 0);
     }
 }
+
+# Start of global code
+
+if ($ARGV[0]) {
+  if (-f $ARGV[0]) {
+    $configfile = $ARGV[0];
+  }
+  else {
+      print "Config file specified on command line '" . $ARGV[0] 
+      . "' not found as a file, trying to use default $configfile instead.\n";
+  }
+}
+
+if (-f $configfile) {
+    open(CONF, $ARGV[0]);
+}
+else {
+    die "No configuration file '$configfile' found, aborting.\n";
+}
+
+{
+    my $line;
+    while($line = <CONF>) {
+        $line =~ s/\#*\Z//;
+        $line =~ s/\s\Z//;
+        if ($line =~ m/=/) {
+        	my $key;
+        	my $value;
+        	($key, $value) = split('=', $line, 2);
+        	if (lc $key eq 'datadir') {
+        	    if (-d $value) {
+	                $datadir = $value;
+        	    }
+	        }
+	        elsif (lc $key eq 'htmlpath') {
+	            if (-d $value) {
+	                $htmlpath = $value;
+	            }
+	        }
+	        elsif (lc $key eq 'simplefile') {
+	            $simplehtmlfilename = $value;
+	        }
+	        elsif (lc $key eq 'siteurl') {
+	            $siteurl = $value;
+	        }
+	        elsif (lc $key eq 'sitename') {
+	            $sitename = $value;
+	        }
+	        elsif (lc $key eq 'detailfile') {
+	            $htmlfilename = $value;
+	        }
+	        elsif (lc $key eq 'timerange') {
+	            unless ($value =~ /\D/) {
+	                $timerange = $value;
+	            }
+	        }
+        }
+        else {
+        	# No equal sign? Ignore the line
+        }
+    }
+}
+close(CONF);
+
+$datumcutofftime = $reportstarttime - $timerange;
+$simplehtmlfile = File::Spec->catfile($htmlpath, $simplehtmlfilename);
+$htmlfile = File::Spec->catfile($htmlpath, $htmlfilename);
+
+if (-d $datadir) {
+    if (opendir(PARENT, $datadir)) {
+	my @data;
+	my $ent;
+	push (@finalhtml, '<html><title>' . $sitename 
+	    .  ' Network Status - Detail</title><body>');
+	push (@finalhtml, 'This report <a href="' . $siteurl . $htmlfilename 
+	    . '"><b>' . $siteurl . $htmlfilename . '</b></a> generated starting at ' 
+	    . $reporthumantime . ". This report is updated every five minutes.\n");
+	push (@finalhtml, '<p>See <a href="https://helpdesk.nnenews.com/projects' 
+	    . '/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk ' 
+	    . ' for documentation (requires login).');
+	{
+	    my $year = $reporttime[5] + 1900;
+	    my $month = $reporttime[4] + 1;
+	    my $day = $reporttime[3];
+	    my $hour = $reporttime[2];
+	    my $url = sprintf($siteurl . '/%d/%d/%d/%d.html', $year, $month
+	        , $day, $hour) ;	    
+	    push (@finalhtml, '<p>For historic access to this report, see <a href="'
+	        .$url . '">' . $url . '</a>');
+	}
+	while ($ent = readdir(PARENT)) {
+	    unless ($ent =~ m/[^[:xdigit:]]/) {
+		my $datum;
+		$datum = File::Spec->catdir($datadir, $ent); 
+		if (-d $datum) {
+		    push (@data, $datum); 
+		}
+		else {
+		    # silently ignore non directories
+		}
+	    }
+	    else {
+		# silently ignore anything with nonnumerics in the name
+	    }
+	}
+	closedir(PARENT);
+	{
+	    my $datum;
+	    foreach $datum (@data) {
+		process_datum($datum);
+	    }
+	}
+	{
+	    my $key;
+	    my $alt = 0;
+	    push(@simplehtml, '<table border="1" style="border:none;border-collapse:collapse">');
+	    foreach $key (sort keys %datumreports) {
+		push (@finalhtml, $datumreports{$key});
+		if ($datumreportsimple{$key} =~ /\S/) {
+		    if ($alt == 0) {
+			push(@simplehtml, '<tr>');
+		    }
+		    push(@simplehtml, '<td style="vertical-align: top">');
+		    push(@simplehtml, '<!-- ' . $key .  ' -->');
+		    push (@simplehtml, $datumreportsimple{$key});
+		    push(@simplehtml, '</td>');
+		    if ($alt == 0) {
+			$alt = 1;
+		    }
+		    else {
+			$alt = 0;
+			push(@simplehtml, '</tr>');
+		    }
+		}
+	    }
+	    push(@simplehtml, '</table>');
+	}
+	push (@finalhtml, '<hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>'
+	    , '<tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>'
+	    , '<tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>'
+	    , '<tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>'
+	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
+	    , '</table>'
+	    , '<hr>Note about netlength: this is half of the distance light could travel in a vacuum during the fastest ping time. ' 
+	      . "Since the packets travel via a mix of copper as electrical impules and fiber as light pulses for the majority of their travel distance, "
+	      . "thier flighttime will always be slower than speed of light through a vacuum. Additionally, routing and switching equipment will always "
+	      . "impose a significant overhead, so the netlength is only a very crude measurement."
+	      . "For reference, Google Maps shows a driving distance from CM to Chandler of 2633miles or 4237km, and an estimate of travel time at highway speeds of 41hrs." 
+	    
+	);
+	push (@finalhtml, '</body></html>');
+	push (@simplehtml, '<hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>'
+	    , '<tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>'
+	    , '<tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>'
+	    , '<tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>'
+	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
+	    , '</table>'
+	);
+	push (@simplehtml, '<a href="' . $siteurl . $htmlfilename . '">More technical details</a> are available if needed.');
+	push (@simplehtml, '</body></html>');
+    }
+    else {
+	logmsg("Unable to open datadirectory '$datadir', aborting.\n",1);
+    }
+}
+else {
+    logmsg("Specified Datadirectory '$datadir' is not a directory, aborting.\n",1); 
+}
+
 
 if ($html_finalized == 0) {
     finalize_html();
