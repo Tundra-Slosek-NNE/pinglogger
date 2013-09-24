@@ -76,6 +76,11 @@ form of hostname that your ping command accepts is valid.
 =item I<samples> - The number of pings to send to the target. This value should 
 be lower than the number of seconds between the runs of ping_test.pl
 
+=item I<description> - During reporting, this is presented as the name of this 
+set of results. If you are gathering samples from multiple targets and 
+running ping_test.pl on multiple computers, you will want the description of 
+each to be unique
+
 =item I<loghost> - The host where results are sent and (if configured at the 
 loghost) processed. The connection to the I<loghost> is made by SSH - the 
 assumption is that this connection can be made without requiring any 
@@ -83,13 +88,12 @@ password or passphrase to be supplied at the command line or STDIN when
 connecting. This must be configured with SSH tools prior to running
 ping_test.pl
 
-=item I<description> - During reporting, this is presented as the name of this 
-set of results. If you are gathering samples from multiple targets and 
-running ping_test.pl on multiple computers, you will want the description of 
-each to be unique
-
 =item I<logcmd> - The command on the I<loghost> to execute. Normally this is
 the full path to ping_logger.pl
+
+=item I<logoption> - Optional string to put between logcmd and encoded report. 
+This is available in order to override the configuration file when using 
+ping_logger.pl
 
 =back
 
@@ -100,6 +104,7 @@ my $samples;
 my $loghost;
 my $description;
 my $logcmd;
+my $logoption;
 my $twig;
 $twig = XML::Twig->new();
 my $root;
@@ -144,6 +149,9 @@ $twig->set_root($root);
         	}
         	elsif (lc $key eq 'logcmd') {
         	    $logcmd = $value;
+        	}
+        	elsif (lc $key eq 'logoption') {
+        	    $logoption = $value;
         	}
         }
         else {
@@ -335,7 +343,12 @@ Statistics::Basic->stddev
 =cut
             my $tosend; 
     	    $tosend = memBzip($twig->sprint);
-    	    system('/usr/bin/ssh', $loghost, $logcmd, encode_base64($tosend, ''));
+    	    if ($logoption) {
+    	        system('/usr/bin/ssh', $loghost, $logcmd, $logoption, encode_base64($tosend, ''));
+    	    }
+    	    else {
+    	        system('/usr/bin/ssh', $loghost, $logcmd, encode_base64($tosend, ''));
+    	    }
     	}
     	else {
     	    die "Rttstats badly formatted: '$rttstats', aborting.\n";

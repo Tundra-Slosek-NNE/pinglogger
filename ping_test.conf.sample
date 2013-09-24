@@ -18,3 +18,7 @@ description=My tester to mail.google.com
 # Enter as much of the path to ping_logger as is required by your loghost when
 # sshing in. 
 logcmd=/usr/local/bin/ping_logger.pl
+
+# Completely optional, but this is where you can override the configuration file
+# that ping_logger will use
+logoption=/etc/ping_logger.conf
