@@ -166,18 +166,18 @@ sub process_datum($) {
 	while($ent = readdir(DATUM)) {
 	    my $filename = File::Spec->catfile($datum, $ent);
 	    if (-f $filename) {
-		unless ($ent =~ m/\D/) {
-		    my @filestats = stat($filename);
-		    if ($filestats[9] > $datumcutofftime) {
-			process_file($datum, $filename, $filestats[9]);
-		    }
-		    else {
-			# silently ignore files older than the cutoff time
-		    }
-		}
-		else {
-		    # silently ignore files with non-digits in the name
-		}
+    		if ($ent =~ m/\d+\.xml/) {
+    		    my @filestats = stat($filename);
+    		    if ($filestats[9] > $datumcutofftime) {
+    			process_file($datum, $filename, $filestats[9]);
+    		    }
+    		    else {
+    			# silently ignore files older than the cutoff time
+    		    }
+    		}
+    		else {
+    		    # silently ignore files with non-digits in the name
+    		}
 	    }
 	    else {
 		# silently ignore nonfiles
