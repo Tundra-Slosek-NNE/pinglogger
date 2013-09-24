@@ -83,14 +83,14 @@ my $starttime = $twig->root->first_child_text('Starttime');
 my $description = $twig->root->first_child_text('Description');
 
 if ($starttime && $description) {
-    $dirname = File::Spec->catdir($datadir, md5_hex($description));
+    my $dirname = File::Spec->catdir($datadir, md5_hex($description));
     unless (-d $dirname) {
     	mkdir $dirname;
     	unless (-d $dirname) {
     	    die "Unable to create directory $dirname, aborting.\n";
     	}
     }
-    $filename = File::Spec->catfile($dirname, $starttime);
+    my $filename = File::Spec->catfile($dirname, $starttime);
     
     if (open(DATAFILE, '>' . $filename)) {
     	print DATAFILE $rawreport;
