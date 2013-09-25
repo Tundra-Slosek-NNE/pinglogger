@@ -614,35 +614,35 @@ sub process_file($$) {
     	{
     	    my $value;
     	    $value = $root->first_child_text('Rttmin');
-    	    if (looks_line_number($value)) {
+    	    if (looks_like_number($value)) {
     	        $rttmin = $value;
     	    }  
     	}
     	{
     	    my $value;
     	    $value = $root->first_child_text('Rttmax');
-    	    if (looks_line_number($value)) {
+    	    if (looks_like_number($value)) {
     	        $rttmax = $value;
     	    }  
     	}
     	{
     	    my $value;
     	    $value = $root->first_child_text('Rttavg');
-    	    if (looks_line_number($value)) {
+    	    if (looks_like_number($value)) {
     	        $rttavg = $value;
     	    }  
     	}
     	{
     	    my $value;
     	    $value = $root->first_child_text('Rttmdev');
-    	    if (looks_line_number($value)) {
+    	    if (looks_like_number($value)) {
     	        $rttmdev = $value;
     	    }  
     	}
     	{
     	    my $value;
     	    $value = $root->first_child_text('Stddev');
-    	    if (looks_line_number($value)) {
+    	    if (looks_like_number($value)) {
     	        $stddev = $value;
     	    }  
     	}
