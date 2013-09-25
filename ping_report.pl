@@ -484,7 +484,7 @@ sub process_datum($) {
     	    $techdetails .= $techclose;
     	    my $numberformatter = new Number::Format;
     	    $datumstats->{'netlength'} = $numberformatter->format_number((299792 * $datumstats->{'rttmin'} / 2 / 1000), 1);
-    	    $datumstats->{'rttavg'} = $datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'} 
+    	    $datumstats->{'rttavg'} = $datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'}; 
     	    $datumreports{$datumstats->{'description'}} = join("\n" 
     		, '<hr>' . $displaydesc 		
     		, sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , $datumstats->{'plosspercent'})  
