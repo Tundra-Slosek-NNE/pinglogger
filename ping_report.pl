@@ -67,7 +67,7 @@ my @simplehtml;
 my @simplesummary;
 
 # datumstats holds the pieces that will go into "site"
-my %datumstats;
+my $datumstats;
 my $description;
 my $siteurl;
 my $sitename;
@@ -128,7 +128,7 @@ summary of data for the entire hour for a given source.
 the color coding comes into play. Style names are 'unreach', 'normal', 
 'warn' and 'error'
 
-=item I<site.name> = Description of this site
+=item I<site.description> = Description of this site
 
 =item I<site.plosspercent> = Percentage of packets lost for this site, 
 includes percent sign
@@ -245,7 +245,7 @@ frame is 15 minutes.
 
 sub process_datum($) {
     my $datum = shift;   
-    %datumstats = ();
+    $datumstats = {};
     my @datumsamples;
     my @minorlist;
     my @minordetaillist;
@@ -302,12 +302,13 @@ sub process_datum($) {
     	@minordev = ();       
     	
     	while($i > $datumcutofftime) {
-    	    my %minorstats;
+    	    my $minorstats;
     	    my $thistrans = 0;
     	    my $thisrecv = 0;
     	    my $firststart = undef;
     	    my $laststart = undef;
     	    my $start;
+    	    $minorstats = {};
     	    foreach $start (keys %bins) {
     		if ((($i - 300) lt $start) && ($start lt $i)) {
     		    my $atrans;
@@ -344,28 +345,28 @@ sub process_datum($) {
         		push(@minorlist, 'n/a'); 
         		push(@minordetaillist, 'n/a'); 
         		push(@minordev, 'n/a');
-        		$minorstats{'list'} = 'n/a';
-        		$minorstats{'detaillist'} = 'n/a';
-        		$minorstats{'jitter'} = 'n/a';
+        		$minorstats->{'list'} = 'n/a';
+        		$minorstats->{'detaillist'} = 'n/a';
+        		$minorstats->{'jitter'} = 'n/a';
     	    }
     	    else {
         		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
         		my $stddev = stddev(@minorsamples);
-        		$minorstats{'list'} = sprintf("%.2f", $loss);
-        		$minorstats{'ptrans'} = $thistrans;
-        		$minorstats{'precv'} = $thisrecv;
-        		$minorstats{'plosspercent'} = sprintf("%.2f%%", $loss);
-        		$minorstats{'ploss'} = $thistrans - $thisrecv;
-        		$minorstats{'laststart'} = $laststart;
-        		$minorstats{'firststart'} = $firststart;
-        		$minorstats{'jitter'} = $stddev;
+        		$minorstats->{'list'} = sprintf("%.2f", $loss);
+        		$minorstats->{'ptrans'} = $thistrans;
+        		$minorstats->{'precv'} = $thisrecv;
+        		$minorstats->{'plosspercent'} = sprintf("%.2f%%", $loss);
+        		$minorstats->{'ploss'} = $thistrans - $thisrecv;
+        		$minorstats->{'laststart'} = $laststart;
+        		$minorstats->{'firststart'} = $firststart;
+        		$minorstats->{'jitter'} = $stddev;
         		push(@minordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $loss, $thistrans - $thisrecv, $laststart, $firststart));
         		$techdetails .= '<br>minor stddev(' . join(',', @minorsamples) . ') =' . $stddev . "\n";
         		push(@minorlist, sprintf("%.2f", $loss));
         		push(@minordev, $stddev);
     	    }
     	    $i -= 300;
-            push (@{$datumstats{'minors'}}, %minorstats);
+            push (@{$datumstats->{'minors'}}, $minorstats);
     	}
     	
     	# Populate the major list
@@ -439,13 +440,13 @@ sub process_datum($) {
     	      . '<tr align="center"><td>Jitter/Std Dev<td>' . join('<td>', @minordev) . '</tr>'
     	      . '<tr align="center"><td>Loss<br>[Age range in s]<td colspan="3">' . join('<td colspan="3">' , @majordetaillist) . '</tr>'
     	      . '<tr align="center"><td>Jitter/Std Dev<td colspan="3">' . join('<td colspan="3">' , @majordev) . '</tr>'
-    	      . '<tr align="center"><td>Loss<td colspan="12">' . sprintf('%.3f%%' , ($datumstats{'overall_ploss'} * 100 )) . '<br>' . ($datumstats{'ptranstotal'} - $datumstats{'precvtotal'}) . ' lost packets</tr>'  
+    	      . '<tr align="center"><td>Loss<td colspan="12">' . sprintf('%.3f%%' , ($datumstats->{'overall_ploss'} * 100 )) . '<br>' . ($datumstats->{'ptranstotal'} - $datumstats->{'precvtotal'}) . ' lost packets</tr>'  
     	      . '<tr align="center"><td>Jitter/Std Dev<td colspan="12">' . $datumstddev . '</tr>'
     	      . '</table></div>';
     
     	    my $displaydesc;
     	    
-    	    if ($datumstats{'overall_ploss'} == 0) {	    
+    	    if ($datumstats->{'overall_ploss'} == 0) {	    
     		$displaydesc = '<div style="color:green;font-size:x-large">';
     		$breakdowntable = '<br><div style="margin: 10px">'
     		  . '<table border="1" style="border:none;border-collapse:collapse"><tr align="center"><td>Minutes Ago<td>0<td>5<td>10<td>15<td>20<td>25<td>30<td>35<td>40<td>45<td>50<td>55</tr>'
@@ -454,54 +455,54 @@ sub process_datum($) {
     		  . '</table>For all numbers, smaller is better</div>';
     		$detailbreakdowntable = $breakdowntable;
     	    }
-    	    elsif ($datumstats{'overall_ploss'} < 0.01) {
+    	    elsif ($datumstats->{'overall_ploss'} < 0.01) {
     		$displaydesc = '<div style="color:orange;font-size:x-large">';
     	    }
-    	    elsif ($datumstats{'overall_ploss'} < 1) {
+    	    elsif ($datumstats->{'overall_ploss'} < 1) {
     		$displaydesc = '<div style="color:red;font-size:x-large">';
     	    }
     	    else {
     		$displaydesc = '<div style="font-size:x-large">';
     	    }
-    	    $displaydesc .= $datumstats{'description'} . '</div>';
+    	    $displaydesc .= $datumstats->{'description'} . '</div>';
     	    
     	    $techdetails .= $techclose;
     	    my $numberformatter = new Number::Format;
-    	    $datumreports{$datumstats{'description'}} = join("\n" 
+    	    $datumreports{$datumstats->{'description'}} = join("\n" 
     		, '<hr>' . $displaydesc 		
-    		, sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , ($datumstats{'overall_ploss'} * 100 ))  
+    		, sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , ($datumstats->{'overall_ploss'} * 100 ))  
     		, '<br>Overall jitter (smaller is better): ' . $datumstddev
-    		, '<br>Tests completed in the last hour (60 is nominal. 59 or 61 is acceptable time quantization error, outside of that is a problem with reporting station): ' . $datumstats{'pingtests_considered'}
-    		, '<br>Target: ' . $datumstats{'target'} 
-    		, '<br>Total packet sent: ' . $datumstats{'ptranstotal'}
-    		, '<br>Total packets received: ' . $datumstats{'precvtotal'}	
-    		, sprintf('<br>Average ping time (ms): %.2f' , ($datumstats{'rttavgaccum'} / $datumstats{'pingtests_considered'} ) )
-    		, sprintf('<br>Fastest ping time (ms): %.2f' , $datumstats{'rttmin'} )
-    		, '<br>netlength (km): ', $numberformatter->format_number((299792 * $datumstats{'rttmin'} / 2 / 1000), 1) 
+    		, '<br>Tests completed in the last hour (60 is nominal. 59 or 61 is acceptable time quantization error, outside of that is a problem with reporting station): ' . $datumstats->{'pingtests_considered'}
+    		, '<br>Target: ' . $datumstats->{'target'} 
+    		, '<br>Total packet sent: ' . $datumstats->{'ptranstotal'}
+    		, '<br>Total packets received: ' . $datumstats->{'precvtotal'}	
+    		, sprintf('<br>Average ping time (ms): %.2f' , ($datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'} ) )
+    		, sprintf('<br>Fastest ping time (ms): %.2f' , $datumstats->{'rttmin'} )
+    		, '<br>netlength (km): ', $numberformatter->format_number((299792 * $datumstats->{'rttmin'} / 2 / 1000), 1) 
     		, $detailbreakdowntable
     		, $techdetails
     		, '<br>Data files that go into this report can be found in ' . $datum . ' with a last modified time between ' . localtime($datumcutofftime) . ' and ' . localtime($reportstarttime) . ' (localtime)'
     	    );
     	    
-    	    unless ($datumstats{'description'} =~ /struct/g) {
-    		$datumreportsimple{$datumstats{'description'}} = join("\n" 
+    	    unless ($datumstats->{'description'} =~ /struct/g) {
+    		$datumreportsimple{$datumstats->{'description'}} = join("\n" 
     		    , $displaydesc 
-    		    , sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , ($datumstats{'overall_ploss'} * 100 ))  
+    		    , sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , ($datumstats->{'overall_ploss'} * 100 ))  
     		    , '<br>Overall jitter (smaller is better): ' . $datumstddev
-    		    , sprintf('<br>Average ping time (ms): %.2f' , ($datumstats{'rttavgaccum'} / $datumstats{'pingtests_considered'} ) )
-    		    , '<br>Tests completed in the last hour (between 59-61 is ok, outside of that is a problem): ' . $datumstats{'pingtests_considered'}		    
+    		    , sprintf('<br>Average ping time (ms): %.2f' , ($datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'} ) )
+    		    , '<br>Tests completed in the last hour (between 59-61 is ok, outside of that is a problem): ' . $datumstats->{'pingtests_considered'}		    
     		    , $breakdowntable
     		);
     		push(@simplesummary, join("\n" 
     		    , '<tr>'
     		    , '<td>' . $displaydesc
-    		    , sprintf('<td>Loss: <b>%.3f%%</b>' , ($datumstats{'overall_ploss'} * 100 ))  
+    		    , sprintf('<td>Loss: <b>%.3f%%</b>' , ($datumstats->{'overall_ploss'} * 100 ))  
     		    , '<td>Jitter: ' . $datumstddev
     		    , '</tr>'
     		    ));
     	    }
     	}
-	    push (@{$ttvars->{'sites'}}, %datumstats);
+	    push (@{$ttvars->{'sites'}}, $datumstats);
     }
     else {
 	logmsg("process_datum: Error opening '$datum' as a directory,  skipping.\n",0);
@@ -643,56 +644,56 @@ sub process_file($$) {
     	$bins{$filemodtime} = $ptrans . ':' . $precv; 
     	$rawsamples{$filemodtime} = $pingtimes;
     	
-    	$datumstats{'description'} = $description;
-    	$datumstats{'target'} = $target;
+    	$datumstats->{'description'} = $description;
+    	$datumstats->{'target'} = $target;
     	
-    	if (exists($datumstats{'pingtests_considered'})) {
-    	    $datumstats{'pingtests_considered'} += 1;
+    	if (exists($datumstats->{'pingtests_considered'})) {
+    	    $datumstats->{'pingtests_considered'} += 1;
     	}
     	else {
-    	    $datumstats{'pingtests_considered'} = 1;
+    	    $datumstats->{'pingtests_considered'} = 1;
     	}
     	
-    	if (exists($datumstats{'rttmax'})) {
-    	    if ($datumstats{'rttmax'} < $rttmax) {
-    		$datumstats{'rttmax'} = $rttmax;		
+    	if (exists($datumstats->{'rttmax'})) {
+    	    if ($datumstats->{'rttmax'} < $rttmax) {
+    		$datumstats->{'rttmax'} = $rttmax;		
     	    }
     	}
     	else {
-    	    $datumstats{'rttmax'} = $rttmax;
+    	    $datumstats->{'rttmax'} = $rttmax;
     	}
     	
-    	if (exists($datumstats{'rttmin'})) {
-    	    if ($datumstats{'rttmin'} > $rttmin) {
-    		$datumstats{'rttmin'} = $rttmin;		
+    	if (exists($datumstats->{'rttmin'})) {
+    	    if ($datumstats->{'rttmin'} > $rttmin) {
+    		$datumstats->{'rttmin'} = $rttmin;		
     	    }
     	}
     	else {
-    	    $datumstats{'rttmin'} = $rttmin;
+    	    $datumstats->{'rttmin'} = $rttmin;
     	}
     	
-    	if (exists($datumstats{'rttavgaccum'})) {
-    	    $datumstats{'rttavgaccum'} += $rttavg;
+    	if (exists($datumstats->{'rttavgaccum'})) {
+    	    $datumstats->{'rttavgaccum'} += $rttavg;
     	}
     	else {
-    	    $datumstats{'rttavgaccum'} = $rttavg;
+    	    $datumstats->{'rttavgaccum'} = $rttavg;
     	}
     	
-    	if (exists($datumstats{'ptranstotal'})) {
-    	    $datumstats{'ptranstotal'} += $ptrans;
+    	if (exists($datumstats->{'ptranstotal'})) {
+    	    $datumstats->{'ptranstotal'} += $ptrans;
     	}
     	else {
-    	    $datumstats{'ptranstotal'} = $ptrans;
+    	    $datumstats->{'ptranstotal'} = $ptrans;
     	}
     	
-    	if (exists($datumstats{'precvtotal'})) {
-    	    $datumstats{'precvtotal'} += $precv;
+    	if (exists($datumstats->{'precvtotal'})) {
+    	    $datumstats->{'precvtotal'} += $precv;
     	}
     	else {
-    	    $datumstats{'precvtotal'} = $precv;
+    	    $datumstats->{'precvtotal'} = $precv;
     	}
     	
-    	$datumstats{'overall_ploss'} = ($datumstats{'ptranstotal'} - $datumstats{'precvtotal'}) / $datumstats{'ptranstotal'}
+    	$datumstats->{'overall_ploss'} = ($datumstats->{'ptranstotal'} - $datumstats->{'precvtotal'}) / $datumstats->{'ptranstotal'}
     	
     }	
     else {
