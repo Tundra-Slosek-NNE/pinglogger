@@ -38,12 +38,18 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     [% IF site.ploss > 0 %]
         <tr align="center"><td>Loss<br>[Age range in s]</td>
         [% FOREACH minor IN site.minors %]
-            <td>([% minor.ptrans %] - [% minor.precv %]) / [% minor.ptrans %] * 100 = 
-            [% FILTER format(%.2f%%) %]
-                [% minor.plosspercent %]
+            <td>
+            [% IF minor.ptrans > 0 %]
+                ([% minor.ptrans %] - [% minor.precv %]) / [% minor.ptrans %] * 100 = 
+                [% FILTER format(%.2f%%) %]
+                    [% minor.plosspercent %]
+                [% END %]
+                <br> [% minor.ploss %] lost packets <br> [
+                [% minor.startage %] - [% minor.endage %] ] 
+            [% ELSE %]
+                n/a
             [% END %]
-            <br> [% minor.ploss %] lost packets <br> [
-            [% minor.startage %] - [% minor.endage %] ] </td>
+            </td>
         [% END %]
         </tr>
     [% END %]
@@ -51,8 +57,12 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     <tr align="center"><td>Jitter/Std Dev</td>
     [% FOREACH minor IN site.minors %]
         <td>
-        [% FILTER format(%.2f%%) %]
-            [% minor.jitter %]
+        [% IF minor.ptrans > 0 %]
+            [% FILTER format(%.2f%%) %]
+                [% minor.jitter %]
+            [% END %]
+        [% ELSE %]
+            n/a
         [% END %]
         </td>
     [% END %]
@@ -61,14 +71,20 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     [% IF site.ploss > 0 %]
         <tr align="center"><td>Loss<br>[Age range in s]</td>
         [% FOREACH major IN site.majors %]
-            <td colspan="[% major.factor %]">([% major.ptrans %] - 
-            [% major.precv %]) / [% major.ptrans %] * 100 = 
-            [% FILTER format(%.2f%%) %]
-                [% major.plosspercent %]
+            <td colspan="[% major.factor %]">
+            [% IF major.ptrans > 0 %]
+                ([% major.ptrans %] - 
+                [% major.precv %]) / [% major.ptrans %] * 100 = 
+                [% FILTER format(%.2f%%) %]
+                    [% major.plosspercent %]
+                [% END %]
+                <br> 
+                [% major.ploss %] lost packets <br> [ [% major.startage %] - 
+                [% major.endage %] ]
+            [% ELSE %]
+                n/a
             [% END %]
-            <br> 
-            [% major.ploss %] lost packets <br> [ [% major.startage %] - 
-            [% major.endage %] ]</td>
+            </td>
         [% END %]
         </tr>
     [% END %]
@@ -76,8 +92,12 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     <tr align="center"><td>Jitter/Std Dev</td>
     [% FOREACH major IN site.majors %]
         <td colspan="[% major.factor %]">
-        [% FILTER format(%.2f%%) %]
-            [% major.jitter %]
+        [% IF major.ptrans > 0 %]
+            [% FILTER format(%.2f%%) %]
+                [% major.jitter %]
+            [% END %]
+        [% ELSE %]
+            n/a
         [% END %]
         </td>
     [% END %]

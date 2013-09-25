@@ -173,7 +173,10 @@ results
 =item I<minor.age> = age in minutes of the most recent sample in minor rounded 
 to 5 minute buckets
 
-=item I<minor.ptrans> = packets sent within the minor
+=item I<minor.ptrans> = packets sent within the minor. Note that if 
+no reports have been received by the logging host, then both the age and 
+ptrans will be populated, but the other values will not be defined. Check 
+that ptrans is greater than zero before relying on data in the other fields.
 
 =item I<minor.precv> = packets received within the minor
 
@@ -351,9 +354,7 @@ sub process_datum($) {
         		push(@minorlist, 'n/a'); 
         		push(@minordetaillist, 'n/a'); 
         		push(@minordev, 'n/a');
-        		$minorstats->{'list'} = 'n/a';
-        		$minorstats->{'detaillist'} = 'n/a';
-        		$minorstats->{'jitter'} = 'n/a';
+        		$minorstats->{'ptrans'} = 0;
     	    }
     	    else {
         		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
@@ -425,9 +426,7 @@ sub process_datum($) {
         		$techdetails .= '<br>major setting to n/a' . "\n";
         		push(@majorlist, 'n/a'); 
         		push(@majordev, 'n/a');
-        		$majorstats->{'list'} = 'n/a';
-        		$majorstats->{'detaillist'} = 'n/a';
-        		$majorstats->{'jitter'} = 'n/a';
+        		$majorstats->{'ptrans'} = 0;
     	    }
     	    else {
         		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
