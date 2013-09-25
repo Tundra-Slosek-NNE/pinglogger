@@ -81,7 +81,7 @@ my %datumreports;
 my %datumreportsimple;
 
 # next two use the file modification time as the key
-# bins holds precv and psent for every sample reported from ping_test
+# bins holds precv and ptrans for every sample reported from ping_test
 my %bins;
 # rawsamples holds the rtt of all pings returned from ping_test
 my %rawsamples; 
@@ -140,7 +140,7 @@ ping_logger.pl
 
 =item I<site.target> = The remote host that was pinged
 
-=item I<site.psent> = The total ping packet sent to the target
+=item I<site.ptrans> = The total ping packet sent to the target
 
 =item I<site.precv> = The number of packets received back in the hour
 
@@ -168,7 +168,7 @@ results
 =item I<minor.age> = age in minutes of the most recent sample in minor rounded 
 to 5 minute buckets
 
-=item I<minor.psent> = packets sent within the minor
+=item I<minor.ptrans> = packets sent within the minor
 
 =item I<minor.precv> = packets received within the minor
 
@@ -438,7 +438,7 @@ sub process_datum($) {
     	}
     	
     	{
-    	    my $datumstddev = stddev(@datumsamples);
+    	    $datumstats->{'jitter'} = (0 + stddev(@datumsamples));
     	    my $breakdowntable = '<br><div style="margin: 10px">'
     	      . '<table border="1" style="border:none;border-collapse:collapse"><tr align="center"><td>Minutes Ago<td>0<td>5<td>10<td>15<td>20<td>25<td>30<td>35<td>40<td>45<td>50<td>55</tr>'
     	      . '<tr align="center"><td>Loss as %<td>' . join('<td>', @minorlist) . '</tr>'
@@ -453,7 +453,7 @@ sub process_datum($) {
     	      . '<tr align="center"><td>Loss<br>[Age range in s]<td colspan="3">' . join('<td colspan="3">' , @majordetaillist) . '</tr>'
     	      . '<tr align="center"><td>Jitter/Std Dev<td colspan="3">' . join('<td colspan="3">' , @majordev) . '</tr>'
     	      . '<tr align="center"><td>Loss<td colspan="12">' . $datumstats->{'plosspercent'} . '%<br>' . $datumstats->{'ploss'} . ' lost packets</tr>'  
-    	      . '<tr align="center"><td>Jitter/Std Dev<td colspan="12">' . $datumstddev . '</tr>'
+    	      . '<tr align="center"><td>Jitter/Std Dev<td colspan="12">' . $datumstats->{'jitter'} . '</tr>'
     	      . '</table></div>';
     
     	    my $displaydesc;
@@ -484,10 +484,11 @@ sub process_datum($) {
     	    $techdetails .= $techclose;
     	    my $numberformatter = new Number::Format;
     	    $datumstats->{'netlength'} = $numberformatter->format_number((299792 * $datumstats->{'rttmin'} / 2 / 1000), 1);
+    	    $datumstats->{'rttavg'} = $datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'} 
     	    $datumreports{$datumstats->{'description'}} = join("\n" 
     		, '<hr>' . $displaydesc 		
     		, sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , $datumstats->{'plosspercent'})  
-    		, '<br>Overall jitter (smaller is better): ' . $datumstddev
+    		, '<br>Overall jitter (smaller is better): ' . $datumstats->{'jitter'}
     		, '<br>Tests completed in the last hour (60 is nominal. 59 or 61 is acceptable time quantization error, outside of that is a problem with reporting station): ' . $datumstats->{'pingtests_considered'}
     		, '<br>Target: ' . $datumstats->{'target'} 
     		, '<br>Total packet sent: ' . $datumstats->{'ptrans'}
@@ -505,7 +506,7 @@ sub process_datum($) {
     		$datumreportsimple{$datumstats->{'description'}} = join("\n" 
     		    , $displaydesc 
     		    , sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , $datumstats->{'plosspercent'} )  
-    		    , '<br>Overall jitter (smaller is better): ' . $datumstddev
+    		    , '<br>Overall jitter (smaller is better): ' . $datumstats->{'jitter'}
     		    , sprintf('<br>Average ping time (ms): %.2f' , ($datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'} ) )
     		    , '<br>Tests completed in the last hour (between 59-61 is ok, outside of that is a problem): ' . $datumstats->{'pingtests_considered'}		    
     		    , $breakdowntable
@@ -514,7 +515,7 @@ sub process_datum($) {
     		    , '<tr>'
     		    , '<td>' . $displaydesc
     		    , sprintf('<td>Loss: <b>%.3f%%</b>' , $datumstats->{'plosspercent'} )  
-    		    , '<td>Jitter: ' . $datumstddev
+    		    , '<td>Jitter: ' . $datumstats->{'jitter'}
     		    , '</tr>'
     		    ));
     	    }
