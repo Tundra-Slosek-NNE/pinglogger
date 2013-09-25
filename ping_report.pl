@@ -130,8 +130,7 @@ the color coding comes into play. Style names are 'unreach', 'normal',
 
 =item I<site.description> = Description of this site
 
-=item I<site.plosspercent> = Percentage of packets lost for this site, 
-includes percent sign
+=item I<site.plosspercent> = Percentage of packets lost for this site
 
 =item I<site.jitter> = Jitter for this site
 
@@ -141,9 +140,9 @@ ping_logger.pl
 
 =item I<site.target> = The remote host that was pinged
 
-=item I<site.packets_sent> = The total ping packet sent to the target
+=item I<site.psent> = The total ping packet sent to the target
 
-=item I<site.packets_recv> = The number of packets received back in the hour
+=item I<site.precv> = The number of packets received back in the hour
 
 =item I<site.rttavg> = Average round trip time of packets received
 
@@ -175,8 +174,7 @@ to 5 minute buckets
 
 =item I<minor.jitter> = jitter within the minor
 
-=item I<minor.plosspercent> = packet loss as percent within the minor, including
-sign
+=item I<minor.plosspercent> = packet loss as percent within the minor
 
 =item I<minor.ploss> = packet loss within the minor in units of packets
 
@@ -355,7 +353,7 @@ sub process_datum($) {
         		$minorstats->{'list'} = sprintf("%.2f", $loss);
         		$minorstats->{'ptrans'} = $thistrans;
         		$minorstats->{'precv'} = $thisrecv;
-        		$minorstats->{'plosspercent'} = sprintf("%.2f%%", $loss);
+        		$minorstats->{'plosspercent'} = sprintf("%.2f%", $loss);
         		$minorstats->{'ploss'} = $thistrans - $thisrecv;
         		$minorstats->{'laststart'} = $laststart;
         		$minorstats->{'firststart'} = $firststart;
@@ -425,7 +423,7 @@ sub process_datum($) {
         		$majorstats->{'list'} = sprintf("%.2f", $loss);
         		$majorstats->{'ptrans'} = $thistrans;
         		$majorstats->{'precv'} = $thisrecv;
-        		$majorstats->{'plosspercent'} = sprintf("%.2f%%", $loss);
+        		$majorstats->{'plosspercent'} = sprintf("%.2f%", $loss);
         		$majorstats->{'ploss'} = $thistrans - $thisrecv;
         		$majorstats->{'laststart'} = $laststart;
         		$majorstats->{'firststart'} = $firststart;
