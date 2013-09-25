@@ -8,70 +8,70 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
 </p>
 
 [% FOREACH site IN sites %]
-<hr><div style="[% site.style %]">[% site.description %]</div>
-<br>Overall packet loss: <b>[% site.plosspercent %]</b>
-<br>Overall jitter (smaller is better): [% site.jitter %]
-<br>Tests completed in the last hour (60 is nominal. 59 or 61 is
-acceptable time quantization error, outside of that is a problem with
-reporting station): [% site.tests %]
-<br>Target: [% site.target %]
-<br>Total packet sent: [% site.packets_sent %]
-<br>Total packets received: [% site.packets_recv %]
-<br>Average ping time (ms): [% site.rttavg %]
-<br>Fastest ping time (ms): [% site.rttmin %]
-<br>netlength (km): 
-[% site.netlength %]
-<br><div style="margin: 10px"><table border="1" style="border:none;border-collapse:collapse"><tbody>
-<tr align="center"><td>Minutes Ago</td>
-[% FOREACH minor IN site.minors %] 
-<td>[% minor.age %]</td>
-[% END %]
-</tr>
-
-[% IF site.ploss > 0 %]
-<tr align="center"><td>Loss<br>[Age range in s]</td>
-[% FOREACH minor IN site.minors %]
-<td>([% minor.psent %] - [% minor.precv %]) / [% minor.psent %] * 100
-= [% minor.plosspercent %] <br> [% minor.ploss %] lost packets <br> [
-[% minor.startage %] - [% minor.endage %] ] </td>
-[% END %]
-</tr>
-[% END %]
-
-<tr align="center"><td>Jitter/Std Dev</td>
-[% FOREACH minor IN site.minors %]
-<td>[% minor.jitter %]</td>
-[% END %]
-</tr>
-
-[% IF site.ploss > 0 %]
-<tr align="center"><td>Loss<br>[Age range in s]</td>
-[% FOREACH major IN site.majors %]
-<td colspan="[% major.factor %]">([% major.psent %] - 
-[% major.precv %]) / [% major.psent %] * 100 = [% major.plosspercent %] <br> 
-[% major.ploss %] lost packets <br> [ [% major.startage %] - 
-[% major.endage %] ]</td>
-[% END %]
-</tr>
-[% END %]
-
-<tr align="center"><td>Jitter/Std Dev</td>
-[% FOREACH major IN site.majors %]
-<td colspan="[% major.factor %]">[% major.jitter %]</td>
-[% END %]
-</tr>
-
-[% IF site.ploss > 0 %]
-<tr align="center"><td>Loss</td><td colspan="12">
-[% site.plosspercent %]<br>[% site.ploss %] lost packets</td></tr>
-[% END %]
-
-
-<tr align="center"><td>Jitter/Std Dev</td><td colspan="12">
-[% site.jitter %]</td></tr></tbody></table></div>
-<br>Data files that go into this report can be found in 
-[% site.datadir %] with a last modified time between [% site.firsttime %]
-and [% site.lasttime %] (localtime)
+    <hr><div style="[% site.style %]">[% site.description %]</div>
+    <br>Overall packet loss: <b>[% site.plosspercent %]</b>
+    <br>Overall jitter (smaller is better): [% site.jitter %]
+    <br>Tests completed in the last hour (60 is nominal. 59 or 61 is
+    acceptable time quantization error, outside of that is a problem with
+    reporting station): [% site.tests %]
+    <br>Target: [% site.target %]
+    <br>Total packet sent: [% site.packets_sent %]
+    <br>Total packets received: [% site.packets_recv %]
+    <br>Average ping time (ms): [% site.rttavg %]
+    <br>Fastest ping time (ms): [% site.rttmin %]
+    <br>netlength (km): 
+    [% site.netlength %]
+    <br><div style="margin: 10px"><table border="1" style="border:none;border-collapse:collapse"><tbody>
+    <tr align="center"><td>Minutes Ago</td>
+    [% FOREACH minor IN site.minors %] 
+        <td>[% minor.age %]</td>
+    [% END %]
+    </tr>
+    
+    [% IF site.ploss > 0 %]
+        <tr align="center"><td>Loss<br>[Age range in s]</td>
+        [% FOREACH minor IN site.minors %]
+            <td>([% minor.psent %] - [% minor.precv %]) / [% minor.psent %] * 100
+            = [% minor.plosspercent %] <br> [% minor.ploss %] lost packets <br> [
+            [% minor.startage %] - [% minor.endage %] ] </td>
+        [% END %]
+        </tr>
+    [% END %]
+    
+    <tr align="center"><td>Jitter/Std Dev</td>
+    [% FOREACH minor IN site.minors %]
+        <td>[% minor.jitter %]</td>
+    [% END %]
+    </tr>
+    
+    [% IF site.ploss > 0 %]
+        <tr align="center"><td>Loss<br>[Age range in s]</td>
+        [% FOREACH major IN site.majors %]
+            <td colspan="[% major.factor %]">([% major.psent %] - 
+            [% major.precv %]) / [% major.psent %] * 100 = [% major.plosspercent %] <br> 
+            [% major.ploss %] lost packets <br> [ [% major.startage %] - 
+            [% major.endage %] ]</td>
+        [% END %]
+        </tr>
+    [% END %]
+    
+    <tr align="center"><td>Jitter/Std Dev</td>
+    [% FOREACH major IN site.majors %]
+        <td colspan="[% major.factor %]">[% major.jitter %]</td>
+    [% END %]
+    </tr>
+    
+    [% IF site.ploss > 0 %]
+        <tr align="center"><td>Loss</td><td colspan="12">
+        [% site.plosspercent %]<br>[% site.ploss %] lost packets</td></tr>
+    [% END %]
+    
+    
+    <tr align="center"><td>Jitter/Std Dev</td><td colspan="12">
+    [% site.jitter %]</td></tr></tbody></table></div>
+    <br>Data files that go into this report can be found in 
+    [% site.datadir %] with a last modified time between [% site.firsttime %]
+    and [% site.lasttime %] (localtime)
 [% END %]
 
 <hr>Color scale: <table style="max-width:50%"><tbody><tr><th>Color</th><th>Meaning</th><th>Impact</th></tr>
