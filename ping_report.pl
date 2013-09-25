@@ -302,7 +302,7 @@ sub process_datum($) {
     	@minordev = ();       
     	
     	while($i > $datumcutofftime) {
-    	    my %minorstast;
+    	    my %minorstats;
     	    my $thistrans = 0;
     	    my $thisrecv = 0;
     	    my $firststart = undef;
