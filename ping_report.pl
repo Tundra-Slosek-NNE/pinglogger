@@ -351,7 +351,7 @@ sub process_datum($) {
     	    }
     	    else {
         		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
-        		my $stddev = stddev(@minorsamples);
+        		my $stddev = scalar stddev(@minorsamples);
         		$minorstats->{'list'} = sprintf("%.2f", $loss);
         		$minorstats->{'ptrans'} = $thistrans;
         		$minorstats->{'precv'} = $thisrecv;
@@ -416,7 +416,7 @@ sub process_datum($) {
     	    }
     	    else {
         		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
-        		my $stddev = stddev(@majorsamples);
+        		my $stddev = scalar stddev(@majorsamples);
         		push(@majordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $loss, $thistrans - $thisrecv, $laststart, $firststart));
         		$techdetails .= '<br>major stddev(' . join(',', @majorsamples) . ') =' . $stddev . "\n";
         		push(@majorlist, sprintf("%.2f", $loss));

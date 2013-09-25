@@ -8,7 +8,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
 </p>
 
 [% FOREACH site IN sites %]
-<hr><div style="[% site.style %]">[% site.name %]</div>
+<hr><div style="[% site.style %]">[% site.description %]</div>
 <br>Overall packet loss: <b>[% site.plosspercent %]</b>
 <br>Overall jitter (smaller is better): [% site.jitter %]
 <br>Tests completed in the last hour (60 is nominal. 59 or 61 is
