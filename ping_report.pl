@@ -38,6 +38,8 @@ Perl install:
 
 =item Compress::Bzip2
 
+=item Scalr::Util
+
 =back
 
 =cut
@@ -51,6 +53,7 @@ use Statistics::Basic qw(:all nofill);
 use Number::Format;
 use XML::Twig;
 use Compress::Bzip2;
+use Scalar::Util qw( looks_like_number );
 
 # Start of global variable definitions
 
@@ -611,35 +614,35 @@ sub process_file($$) {
     	{
     	    my $value;
     	    $value = $root->first_child_text('Rttmin');
-    	    unless ($value =~ /\D/) {
+    	    if (looks_line_number($value)) {
     	        $rttmin = $value;
     	    }  
     	}
     	{
     	    my $value;
     	    $value = $root->first_child_text('Rttmax');
-    	    unless ($value =~ /\D/) {
+    	    if (looks_line_number($value)) {
     	        $rttmax = $value;
     	    }  
     	}
     	{
     	    my $value;
     	    $value = $root->first_child_text('Rttavg');
-    	    unless ($value =~ /\D/) {
+    	    if (looks_line_number($value)) {
     	        $rttavg = $value;
     	    }  
     	}
     	{
     	    my $value;
     	    $value = $root->first_child_text('Rttmdev');
-    	    unless ($value =~ /\D/) {
+    	    if (looks_line_number($value)) {
     	        $rttmdev = $value;
     	    }  
     	}
     	{
     	    my $value;
     	    $value = $root->first_child_text('Stddev');
-    	    unless ($value =~ /\D/) {
+    	    if (looks_line_number($value)) {
     	        $stddev = $value;
     	    }  
     	}
