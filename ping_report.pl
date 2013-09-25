@@ -66,6 +66,7 @@ my @finalhtml;
 my @simplehtml;
 my @simplesummary;
 
+# datumstats holds the pieces that will go into "site"
 my %datumstats;
 my $description;
 my $siteurl;
@@ -79,12 +80,19 @@ my $htmlpath = "/var/www/status/";
 my %datumreports;
 my %datumreportsimple;
 
+# next two use the file modification time as the key
+# bins holds precv and psent for every sample reported from ping_test
 my %bins;
+# rawsamples holds the rtt of all pings returned from ping_test
 my %rawsamples; 
 
 my $htmlfile;
 my $simplehtmlfile;
 my $datumcutofftime;
+my $simpletemplate;
+my $detailtemplate;
+
+my %ttvars;
 
 # No more global variables should be declared beyond here
 
@@ -102,47 +110,99 @@ sub logmsg($$) {
 
 sub finalize_html() {
     $html_finalized = 1;
-    # Variables for Template::Toolkit
-    # sites a description sorted array of site. Site is the summary of data 
-    #     for the entire hour.
-    #  site.style = CSS style for the header for this site
-    #  site.name = Description of this site
-    #  site.plosspercent = Percentage of packets lost for this site, includes
-    #                      percent sign
-    #  site.jitter = Jitter for this site
-    #  site.tests = The number of report files found in the hour
-    #  site.target = The remote host that was pinged
-    #  site.packets_sent = The total ping packet sent to the target
-    #  site.packets_recv = The number of packets received back in the hour
-    #  site.rttavg = Average round trip time of packets received
-    #  site.rttmin = Shortest round trip time of packets received
-    #  site.netlength = 1/2 rttmin/speed of light
-    #  site.ploss = The number of packets lost in the hour (diff between sent 
-    #               and recv
-    #  site.datadir = Full path to site specific directory where results are
-    #                 stored
-    #  site.firsttime = Earliest timestamp on a report file that goes into the 
-    #                   results
-    #  site.lasttime = Latest timestamp on a report file that goes into the 
-    #                  results
-    #  minors = time sorted array of smallest summarized 
-    #           units (baseline 5min increments)
-    #    minor.age = age in minutes of the most recent sample in minor rounded 
-    #                to 5 minute buckets
-    #    minor.psent = packets sent within the minor
-    #    minor.precv = packets received within the minor
-    #    minor.jitter = jitter within the minor
-    #    minor.plosspercent = packet loss as percent within the minor, 
-    #                         including sign
-    #    minor.ploss = packet loss within the minor in units of packets
-    #    minor.startage = actual earliest timestamp in seconds ago
-    #    minor.endage = actual latest timestamp in seconds ago
-    #  majors = time sorted array of larger summarized units 
-    #           (baseline 15min increments)
-    #    same variables as minors, but for 15min range instead of 5min range
-    #    plus
-    #    major.factor = the number of minor samples that go into each major
-    #                   so for 5min/15min, the factor = 3
+    
+=pod 
+
+=head1 TEMPLATE VARIABLES
+
+Template files use Template::Toolkit (see http://template-toolkit.org )
+
+The following variables are available for a template to use:
+    
+=over
+
+=item I<sites> a description sorted array of I<site>. I<site> is the 
+summary of data for the entire hour for a given source.
+
+=item I<site.style> = CSS style for the header for this site, this is where
+the color coding comes into play. Style names are 'unreach', 'normal', 
+'warn' and 'error'
+
+=item I<site.name> = Description of this site
+
+=item I<site.plosspercent> = Percentage of packets lost for this site, 
+includes percent sign
+
+=item I<site.jitter> = Jitter for this site
+
+=item I<site.tests> = The number of report files found in the hour, i.e. the 
+number of times that ping_test.pl successfully logged a sample through
+ping_logger.pl
+
+=item I<site.target> = The remote host that was pinged
+
+=item I<site.packets_sent> = The total ping packet sent to the target
+
+=item I<site.packets_recv> = The number of packets received back in the hour
+
+=item I<site.rttavg> = Average round trip time of packets received
+
+=item I<site.rttmin> = Shortest round trip time of packets received
+
+=item I<site.netlength> = 1/2 rttmin/speed of light
+
+=item I<site.ploss> = The number of packets lost in the hour (difference 
+between I<site.packets_sent> and I<site.packets_recv>)
+
+=item I<site.datadir> = Full path to site specific directory where results are
+stored
+
+=item I<site.firsttime> = Earliest timestamp on a report file that goes into 
+the results
+
+=item I<site.lasttime> = Latest timestamp on a report file that goes into the 
+results
+
+=item I<minors> = time sorted array of smallest summarized units (baseline
+5min increments)
+
+=item I<minor.age> = age in minutes of the most recent sample in minor rounded 
+to 5 minute buckets
+
+=item I<minor.psent> = packets sent within the minor
+
+=item I<minor.precv> = packets received within the minor
+
+=item I<minor.jitter> = jitter within the minor
+
+=item I<minor.plosspercent> = packet loss as percent within the minor, including
+sign
+
+=item I<minor.ploss> = packet loss within the minor in units of packets
+
+=item I<minor.startage> = actual earliest timestamp in seconds ago
+
+=item I<minor.endage> = actual latest timestamp in seconds ago
+
+=item I<majors = time sorted array of larger summarized units (baseline 
+15min increments) same variables as minors, but for 15min range instead
+of 5min range. Additionally one more variable is available in major: 
+
+=item I<major.factor> = the number of minor samples that go into each major
+so for 5min/15min, the factor = 3
+    
+=back
+
+=head1 TIMEFRAMES
+
+There are assumptions about timeframes built into the scripts and 
+configurations at NNE - that the
+reporting window is the past hour, that the archive of detailed scripts is 
+stored by days, that the minor time frame is 5 minutes, that the major time
+frame is 15 minutes.
+
+=cut
+
     if (open(HTML, '>'.$htmlfile)) {
 	print HTML join("\n", @finalhtml);
 	close(HTML);
@@ -203,17 +263,21 @@ sub process_datum($) {
 	%bins = ();
 	$techdetails .= '<br>bin keys: ' . join(':', keys %bins) . "\n";
 	$laststart = 0;
+	
+	# Read all the files 
 	my $ent;
 	while($ent = readdir(DATUM)) {
 	    my $filename = File::Spec->catfile($datum, $ent);
 	    if (-f $filename) {
     		if ($ent =~ m/\d+\.xml/) {
     		    my @filestats = stat($filename);
+                # TODO we should be testing for a time range, not just 
+                # 'newer than cutoff' 
     		    if ($filestats[9] > $datumcutofftime) {
-    			process_file($datum, $filename, $filestats[9]);
+        			process_file($datum, $filename, $filestats[9]);
     		    }
     		    else {
-    			# silently ignore files older than the cutoff time
+        			# silently ignore files older than the cutoff time
     		    }
     		}
     		else {
@@ -226,7 +290,9 @@ sub process_datum($) {
 	}
 	closedir(DATUM);
 	
-
+    push (@$ttvars{'sites'}, %datumstats);
+    
+    # Populate the minor list	
 	my $i = $reportstarttime;
 	@minorlist = ();
 	@minordetaillist = ();
@@ -245,22 +311,23 @@ sub process_datum($) {
 		    my $arecv;
 		    ($atrans, $arecv) = split(':', $bins{$start});
 		    @minorsamples = split(':', $rawsamples{$start});
-		    $techdetails .= '<br>Ping times for ' . $start . '=' . $rawsamples{$start} . "\n" ;
+		    $techdetails .= '<br>Ping times for ' . $start . '=' 
+		                    . $rawsamples{$start} . "\n" ;
 		    push(@datumsamples, @minorsamples);
 		    $thistrans += $atrans;
 		    $thisrecv += $arecv;
 		    if ($firststart) {
-			if ($firststart gt $start) {
-			    $firststart = $start;
-			}
+    			if ($firststart gt $start) {
+    			    $firststart = $start;
+    			}
 		    }
 		    else {
-			$firststart = $start;
+		    	$firststart = $start;
 		    }
 		    if ($laststart) {
-			if ($laststart lt $start) {
-			    $laststart = $start;
-			}
+    			if ($laststart lt $start) {
+    			    $laststart = $start;
+    			}
 		    }
 		    else {
 			$laststart = $start;
@@ -270,21 +337,23 @@ sub process_datum($) {
 	    $firststart = $reportstarttime - $firststart;
 	    $laststart = $reportstarttime - $laststart;
 	    if ($thistrans == 0) {
-		$techdetails .= '<br>minor setting to n/a' . "\n";
-		push(@minorlist, 'n/a'); 
-		push(@minordetaillist, 'n/a'); 
-		push(@minordev, 'n/a');
+    		$techdetails .= '<br>minor setting to n/a' . "\n";
+    		push(@minorlist, 'n/a'); 
+    		push(@minordetaillist, 'n/a'); 
+    		push(@minordev, 'n/a');
 	    }
 	    else {
-		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
-		my $stddev = stddev(@minorsamples);
-		push(@minordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $loss, $thistrans - $thisrecv, $laststart, $firststart));
-		$techdetails .= '<br>minor stddev(' . join(',', @minorsamples) . ') =' . $stddev . "\n";
-		push(@minorlist, sprintf("%.2f", $loss));
-		push(@minordev, $stddev);
+    		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
+    		my $stddev = stddev(@minorsamples);
+    		push(@minordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $loss, $thistrans - $thisrecv, $laststart, $firststart));
+    		$techdetails .= '<br>minor stddev(' . join(',', @minorsamples) . ') =' . $stddev . "\n";
+    		push(@minorlist, sprintf("%.2f", $loss));
+    		push(@minordev, $stddev);
 	    }
 	    $i -= 300;
 	}
+	
+	# Populate the major list
 	$i = $reportstarttime;
 	@majorlist = ();
 	@majordetaillist = ();
@@ -297,48 +366,49 @@ sub process_datum($) {
 	    my $laststart = undef;
 	    my $start;
 	    foreach $start (keys %bins) {
-		if ((($i - 900) lt $start) && ($start lt $i)) {
-		    my $atrans;
-		    my $arecv;
-		    ($atrans, $arecv) = split(':', $bins{$start});
-		    @majorsamples = split(':', $rawsamples{$start});
-		    $thistrans += $atrans;
-		    $thisrecv += $arecv;
-		    if ($firststart) {
-			if ($firststart gt $start) {
-			    $firststart = $start;
-			}
-		    }
-		    else {
-			$firststart = $start;
-		    }
-		    if ($laststart) {
-			if ($laststart lt $start) {
-			    $laststart = $start;
-			}
-		    }
-		    else {
-			$laststart = $start;
-		    }
-		}
+    		if ((($i - 900) lt $start) && ($start lt $i)) {
+    		    my $atrans;
+    		    my $arecv;
+    		    ($atrans, $arecv) = split(':', $bins{$start});
+    		    @majorsamples = split(':', $rawsamples{$start});
+    		    $thistrans += $atrans;
+    		    $thisrecv += $arecv;
+    		    if ($firststart) {
+        			if ($firststart gt $start) {
+        			    $firststart = $start;
+        			}
+    		    }
+    		    else {
+    		    	$firststart = $start;
+    		    }
+    		    if ($laststart) {
+        			if ($laststart lt $start) {
+        			    $laststart = $start;
+        			}
+    		    }
+    		    else {
+    			$laststart = $start;
+    		    }
+    		}
 	    }
 	    $firststart = $reportstarttime - $firststart;
 	    $laststart = $reportstarttime - $laststart;
 	    if ($thistrans == 0) {
-		$techdetails .= '<br>major setting to n/a' . "\n";
-		push(@majorlist, 'n/a'); 
-		push(@majordev, 'n/a');
+    		$techdetails .= '<br>major setting to n/a' . "\n";
+    		push(@majorlist, 'n/a'); 
+    		push(@majordev, 'n/a');
 	    }
 	    else {
-		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
-		my $stddev = stddev(@majorsamples);
-		push(@majordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $loss, $thistrans - $thisrecv, $laststart, $firststart));
-		$techdetails .= '<br>major stddev(' . join(',', @majorsamples) . ') =' . $stddev . "\n";
-		push(@majorlist, sprintf("%.2f", $loss));
-		push(@majordev, $stddev);
+    		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
+    		my $stddev = stddev(@majorsamples);
+    		push(@majordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $loss, $thistrans - $thisrecv, $laststart, $firststart));
+    		$techdetails .= '<br>major stddev(' . join(',', @majorsamples) . ') =' . $stddev . "\n";
+    		push(@majorlist, sprintf("%.2f", $loss));
+    		push(@majordev, $stddev);
 	    }
 	    $i -= 900;
 	}
+	
 	{
 	    my $datumstddev = stddev(@datumsamples);
 	    my $breakdowntable = '<br><div style="margin: 10px">'
@@ -652,17 +722,23 @@ else {
 	                $htmlpath = $value;
 	            }
 	        }
-	        elsif (lc $key eq 'simplefile') {
-	            $simplehtmlfilename = $value;
-	        }
 	        elsif (lc $key eq 'siteurl') {
 	            $siteurl = $value;
 	        }
 	        elsif (lc $key eq 'sitename') {
 	            $sitename = $value;
 	        }
+	        elsif (lc $key eq 'simplefile') {
+	            $simplehtmlfilename = $value;
+	        }
 	        elsif (lc $key eq 'detailfile') {
 	            $htmlfilename = $value;
+	        }
+	        elsif (lc $key eq 'simpletemplate') {
+	            $simpletemplate = $value;
+	        }
+	        elsif (lc $key eq 'detailtemplate') {
+	            $detailtemplate = $value;
 	        }
 	        elsif (lc $key eq 'timerange') {
 	            unless ($value =~ /\D/) {
@@ -787,5 +863,3 @@ if ($html_finalized == 0) {
     finalize_html();
 }
 
-
-    
