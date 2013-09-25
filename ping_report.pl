@@ -62,6 +62,8 @@ my $configfile = "/etc/ping_report.conf";
 my $html_finalized = 0;
 my $reportstarttime = time;
 my $timerange = 3600;
+my $minortime = 300;
+my $majortime = 900;
 my $reporthumantime = localtime($reportstarttime);
 my @reporttime = localtime($reportstarttime);
 
@@ -311,7 +313,7 @@ sub process_datum($) {
     	    my $start;
     	    $minorstats = {};
     	    foreach $start (keys %bins) {
-    		if ((($i - 300) lt $start) && ($start lt $i)) {
+    		if ((($i - $minortime) lt $start) && ($start lt $i)) {
     		    my $atrans;
     		    my $arecv;
     		    ($atrans, $arecv) = split(':', $bins{$start});
@@ -341,6 +343,9 @@ sub process_datum($) {
     	    }
     	    $firststart = $reportstarttime - $firststart;
     	    $laststart = $reportstarttime - $laststart;
+    	    $minorstats->{'age'} = int($firststart / 5) * 5;
+    	    $minorstats->{'startage'} = $firststart;
+    	    $minorstats->{'endage'} = $laststart;
     	    if ($thistrans == 0) {
         		$techdetails .= '<br>minor setting to n/a' . "\n";
         		push(@minorlist, 'n/a'); 
@@ -366,7 +371,7 @@ sub process_datum($) {
         		push(@minorlist, sprintf("%.2f", $loss));
         		push(@minordev, $stddev);
     	    }
-    	    $i -= 300;
+    	    $i -= $minortime;
             push (@{$datumstats->{'minors'}}, $minorstats);
     	}
     	
@@ -385,7 +390,7 @@ sub process_datum($) {
     	    my $start;
     	    $majorstats = {};
     	    foreach $start (keys %bins) {
-        		if ((($i - 900) lt $start) && ($start lt $i)) {
+        		if ((($i - $majortime) lt $start) && ($start lt $i)) {
         		    my $atrans;
         		    my $arecv;
         		    ($atrans, $arecv) = split(':', $bins{$start});
@@ -412,6 +417,10 @@ sub process_datum($) {
     	    }
     	    $firststart = $reportstarttime - $firststart;
     	    $laststart = $reportstarttime - $laststart;
+    	    $majorstats->{'age'} = int($firststart / 5) * 5;
+    	    $majorstats->{'startage'} = $firststart;
+    	    $majorstats->{'endage'} = $laststart;
+    	    $majorstats->{'factor'} = $majortime / $minortime;
     	    if ($thistrans == 0) {
         		$techdetails .= '<br>major setting to n/a' . "\n";
         		push(@majorlist, 'n/a'); 
@@ -436,7 +445,8 @@ sub process_datum($) {
         		push(@majorlist, sprintf("%.2f", $loss));
         		push(@majordev, $stddev);
     	    }
-    	    $i -= 900;
+    	    $i -= $majortime;
+    	    
             push (@{$datumstats->{'majors'}}, $majorstats);
     	}
     	
@@ -742,6 +752,60 @@ else {
     die "No configuration file '$configfile' found, aborting.\n";
 }
 
+=pod
+
+=head1 CONFIGURATION 
+
+The following configuration variables are defined
+
+=over
+
+=item I<datadir> = parent of all data directories
+
+=item I<htmlpath> = where to output html files
+
+=item I<siteurl> = URL of the logging host when needed within an html file
+
+=item I<sitename> = Name organization
+
+=item I<simplefile> = name of the html file that will be output for 'simple' 
+point of view
+
+=item I<detailfile> = name of the html file that will be output for 'detail' 
+point of view
+
+=item I<simpletemplate> = name of the Template::Toolkit formatted template
+file that will be used as the source for 'simple' point of view
+
+=item I<detailtemplate> = name of the Template::Toolkit formatted template
+file that will be used as the source for 'detail' point of view
+
+=item I<timerange> = Number of seconds to report on (NNE uses 3600, ie 1hr)
+
+=item I<minortime> = Number of seconds in a minor division (NNE uses 300, ie 
+5min)
+
+=item I<majortime> = Number of seconds in a major division (NNE uses 900, ie
+15min)
+
+=back
+
+ping_report.pl is not tested for the following cases: 
+
+=over 
+
+=item I<timerange> is not an integer multiple of I<majortime>. 
+
+=item I<majortime> is not an integer multiple of I<minortime>.
+
+=item I<timerange> is not larger than I<majortime>. 
+
+=item I<majortime> is not larger than I<minortime>.
+
+=back
+
+=cut
+
 {
     my $line;
     while($line = <CONF>) {
@@ -782,6 +846,16 @@ else {
 	        elsif (lc $key eq 'timerange') {
 	            unless ($value =~ /\D/) {
 	                $timerange = $value;
+	            }
+	        }
+	        elsif (lc $key eq 'minortime') {
+	            unless ($value =~ /\D/) {
+	                $minortime = $value;
+	            }
+	        }
+	        elsif (lc $key eq 'majortime') {
+	            unless ($value =~ /\D/) {
+	                $majortime = $value;
 	            }
 	        }
         }
