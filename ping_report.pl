@@ -24,7 +24,7 @@ Perl install:
     
 =over 
 
-=item HTML::Template
+=item Template
 
 =item Statistics::Basic
 
@@ -44,7 +44,7 @@ Perl install:
 
 use strict;
 
-use HTML::Template;
+use Template;
 use File::Spec;
 use File::Copy;
 use Statistics::Basic qw(:all nofill);
@@ -203,40 +203,42 @@ frame is 15 minutes.
 
 =cut
 
-    if (open(HTML, '>'.$htmlfile)) {
-	print HTML join("\n", @finalhtml);
-	close(HTML);
-	if (open(HTML, '>' . $simplehtmlfile)) {
-	    print HTML '<html><title>NNE Network Status</title><body>' . "\n";
-	    print HTML 'This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at ' . $reporthumantime . ". This report is updated every five minutes.\n";
-	    print HTML '<table border="1" style="border:none;border-collapse:collapse">';
-	    print HTML join("\n", sort {substr($a, index($a, '>' ,15 )) cmp substr($b, index($b, '>', 15))} @simplesummary);
-	    print HTML '</table><p>';
-	    print HTML join("\n", @simplehtml);
-	    close(HTML);
-	}
-	my $year = $reporttime[5] + 1900;
-	my $month = $reporttime[4] + 1;
-	my $day = $reporttime[3];
-	my $hour = $reporttime[2];
-	my $mypath = File::Spec->catdir($htmlpath, $year);
-	unless (-d $mypath) {
-	    mkdir $mypath;	    
-	}
-	$mypath = File::Spec->catdir($mypath, $month);
-	unless (-d $mypath) {
-	    mkdir $mypath;
-	}
-	$mypath = File::Spec->catdir($mypath, $day);
-	unless (-d $mypath) {
-	    mkdir $mypath;
-	}
-	if (-d $mypath) {
-	    copy($htmlfile, File::Spec->catfile($mypath, $hour . '.html'));
-	}	
+    my $simpletemplate = Template->new();
+    if ($simpletemplate->process($detailtemplate, %ttvars, $htmlfile)) {
+    #if (open(HTML, '>'.$htmlfile)) {
+    #	print HTML join("\n", @finalhtml);
+    #	close(HTML);
+    	if (open(HTML, '>' . $simplehtmlfile)) {
+    	    print HTML '<html><title>NNE Network Status</title><body>' . "\n";
+    	    print HTML 'This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at ' . $reporthumantime . ". This report is updated every five minutes.\n";
+    	    print HTML '<table border="1" style="border:none;border-collapse:collapse">';
+    	    print HTML join("\n", sort {substr($a, index($a, '>' ,15 )) cmp substr($b, index($b, '>', 15))} @simplesummary);
+    	    print HTML '</table><p>';
+    	    print HTML join("\n", @simplehtml);
+    	    close(HTML);
+    	}
+    	my $year = $reporttime[5] + 1900;
+    	my $month = $reporttime[4] + 1;
+    	my $day = $reporttime[3];
+    	my $hour = $reporttime[2];
+    	my $mypath = File::Spec->catdir($htmlpath, $year);
+    	unless (-d $mypath) {
+    	    mkdir $mypath;	    
+    	}
+    	$mypath = File::Spec->catdir($mypath, $month);
+    	unless (-d $mypath) {
+    	    mkdir $mypath;
+    	}
+    	$mypath = File::Spec->catdir($mypath, $day);
+    	unless (-d $mypath) {
+    	    mkdir $mypath;
+    	}
+    	if (-d $mypath) {
+    	    copy($htmlfile, File::Spec->catfile($mypath, $hour . '.html'));
+    	}	
     }
     else {
-	die "Unable to open $htmlpath for writing, aborting\n";
+	    die "Unable to open $htmlpath for writing, aborting\n";
     }
 }
 
@@ -300,6 +302,7 @@ sub process_datum($) {
 	@minordev = ();       
 	
 	while($i > $datumcutofftime) {
+	    my %minorstat;
 	    my $thistrans = 0;
 	    my $thisrecv = 0;
 	    my $firststart = undef;
@@ -341,16 +344,29 @@ sub process_datum($) {
     		push(@minorlist, 'n/a'); 
     		push(@minordetaillist, 'n/a'); 
     		push(@minordev, 'n/a');
+    		$minorstats{'list'} = 'n/a';
+    		$minorstats{'detaillist'} = 'n/a';
+    		$minorstats{'jitter'} = 'n/a';
 	    }
 	    else {
     		my $loss = ($thistrans - $thisrecv) / $thistrans * 100;
     		my $stddev = stddev(@minorsamples);
+    		$minorstats{'list'} = sprintf("%.2f", $loss);
+    		$minorstats{'ptrans'} = $thistrans;
+    		$minorstats{'precv'} = $thisrecv;
+    		$minorstats{'plosspercent'} = spritnf("%.2f%%", $loss);
+    		$minorstats{'ploss'} = $thistrans - $thisrecv;
+    		$minorstats{'laststart'} = $laststart;
+    		$minorstats{'firststart'} = $firststart;
+    		$minorstats{'jitter'} = $stddev;
     		push(@minordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $loss, $thistrans - $thisrecv, $laststart, $firststart));
     		$techdetails .= '<br>minor stddev(' . join(',', @minorsamples) . ') =' . $stddev . "\n";
     		push(@minorlist, sprintf("%.2f", $loss));
     		push(@minordev, $stddev);
 	    }
 	    $i -= 300;
+        push (@$ttvars{'sites'}=>{'minors'}, %minorstats);
+	    
 	}
 	
 	# Populate the major list
