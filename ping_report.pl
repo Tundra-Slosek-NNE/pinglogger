@@ -354,7 +354,7 @@ sub process_datum($) {
         		$minorstats{'list'} = sprintf("%.2f", $loss);
         		$minorstats{'ptrans'} = $thistrans;
         		$minorstats{'precv'} = $thisrecv;
-        		$minorstats{'plosspercent'} = spritnf("%.2f%%", $loss);
+        		$minorstats{'plosspercent'} = sprintf("%.2f%%", $loss);
         		$minorstats{'ploss'} = $thistrans - $thisrecv;
         		$minorstats{'laststart'} = $laststart;
         		$minorstats{'firststart'} = $firststart;
