@@ -14,7 +14,10 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
         [% site.plosspercent %]
     [% END %]
     </b>
-    <br>Overall jitter (smaller is better): [% site.jitter %]
+    <br>Overall jitter (smaller is better): 
+    [% FILTER format(%.2f%%) %]
+        [% site.jitter %]
+    [% END %]
     <br>Tests completed in the last hour (60 is nominal. 59 or 61 is
     acceptable time quantization error, outside of that is a problem with
     reporting station): [% site.pingtests_considered %]
@@ -47,7 +50,11 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     
     <tr align="center"><td>Jitter/Std Dev</td>
     [% FOREACH minor IN site.minors %]
-        <td>[% minor.jitter %]</td>
+        <td>
+        [% FILTER format(%.2f%%) %]
+            [% minor.jitter %]
+        [% END %]
+        </td>
     [% END %]
     </tr>
     
@@ -68,7 +75,11 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     
     <tr align="center"><td>Jitter/Std Dev</td>
     [% FOREACH major IN site.majors %]
-        <td colspan="[% major.factor %]">[% major.jitter %]</td>
+        <td colspan="[% major.factor %]">
+        [% FILTER format(%.2f%%) %]
+            [% major.jitter %]
+        [% END %]
+        </td>
     [% END %]
     </tr>
     
