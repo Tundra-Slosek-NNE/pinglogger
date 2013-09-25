@@ -201,8 +201,8 @@ frame is 15 minutes.
 
 =cut
 
-    my $simpletemplate = Template->new();
-    if ($simpletemplate->process($detailtemplate, $ttvars, $htmlfile)) {
+    my $templateengine = Template->new();
+    if ($templateengine->process($detailtemplate, $ttvars, $htmlfile)) {
     #if (open(HTML, '>'.$htmlfile)) {
     #	print HTML join("\n", @finalhtml);
     #	close(HTML);
@@ -236,7 +236,7 @@ frame is 15 minutes.
     	}	
     }
     else {
-	    die "Unable to open $htmlpath for writing, aborting\n";
+	    die "Error processing template for writing to output file, aborting with error:\n" . $templateengine->error() . "\n";
     }
 }
 
