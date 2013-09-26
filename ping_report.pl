@@ -469,25 +469,21 @@ sub process_datum($) {
     	{
     	    $datumstats->{'jitter'} = (0+stddev(@datumsamples));
 
-    	    my $displaydesc;
-    	    
+# Start of code to determine style to display the current site in
     	    if ($datumstats->{'plosspercent'} == 0) {	    
-        		$displaydesc = '<div style="color:green;font-size:x-large">';
         		$datumstats->{'style'} = 'normal';
     	    }
     	    elsif ($datumstats->{'plosspercent'} < 1) {
-        		$displaydesc = '<div style="color:orange;font-size:x-large">';
         		$datumstats->{'style'} = 'warn';
     	    }
     	    elsif ($datumstats->{'plosspercent'} < 100) {
-        		$displaydesc = '<div style="color:red;font-size:x-large">';
         		$datumstats->{'style'} = 'error';
     	    }
     	    else {
-    	    	$displaydesc = '<div style="font-size:x-large">';
         		$datumstats->{'style'} = 'unreach';
     	    }
-    	    $displaydesc .= $datumstats->{'description'} . '</div>';
+# End of code to determine the style to display the current site in
+
     	    my $numberformatter = new Number::Format;
     	    $datumstats->{'netlength'} = $numberformatter->format_number((299792 * $datumstats->{'rttmin'} / 2 / 1000), 1);
     	    $datumstats->{'rttavg'} = $datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'}; 
