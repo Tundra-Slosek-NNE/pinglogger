@@ -24,7 +24,10 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     <br>Target: [% site.target %]
     <br>Total packet sent: [% site.ptrans %]
     <br>Total packets received: [% site.precv %]
-    <br>Average ping time (ms): [% site.rttavg %]
+    <br>Average ping time (ms): 
+    [% FILTER format('%.2f') %]
+        [% site.rttavg %]
+    [% END %]
     <br>Fastest ping time (ms): [% site.rttmin %]
     <br>netlength (km): 
     [% site.netlength %]
@@ -113,7 +116,10 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     
     
     <tr align="center"><td>Jitter/Std Dev</td><td colspan="12">
-    [% site.jitter %]</td></tr></tbody></table></div>
+    [% FILTER format('%.2f') %]
+        [% site.jitter %]
+    [% END %]
+    </td></tr></tbody></table></div>
     <br>Data files that go into this report can be found in 
     [% site.datadir %] with a last modified time between [% site.firsttime %]
     and [% site.lasttime %] (localtime)
