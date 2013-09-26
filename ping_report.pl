@@ -216,18 +216,11 @@ frame is 15 minutes.
     }
     my $templateengine = Template->new({INCLUDE_PATH=>$templatepath});
     if ($templateengine->process($detailtemplate, $ttvars, $htmlfile)) {
-    #if (open(HTML, '>'.$htmlfile)) {
-    #	print HTML join("\n", @finalhtml);
-    #	close(HTML);
-    	if (open(HTML, '>' . $simplehtmlfile)) {
-    	    print HTML '<html><title>NNE Network Status</title><body>' . "\n";
-    	    print HTML 'This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at ' . $reporthumantime . ". This report is updated every five minutes.\n";
-    	    print HTML '<table border="1" style="border:none;border-collapse:collapse">';
-    	    print HTML join("\n", sort {substr($a, index($a, '>' ,15 )) cmp substr($b, index($b, '>', 15))} @simplesummary);
-    	    print HTML '</table><p>';
-    	    print HTML join("\n", @simplehtml);
-    	    close(HTML);
-    	}
+        if ($templateengine->process($simpletemplate, $ttvars, $simplehtmlfile) {
+        }
+        else {
+            # If we can process the detail but not the simple, what should we do?
+        }   
     	my $year = $reporttime[5] + 1900;
     	my $month = $reporttime[4] + 1;
     	my $day = $reporttime[3];
@@ -356,20 +349,19 @@ sub process_datum($) {
     	    $firststart = $reportstarttime - $firststart;
     	    $laststart = $reportstarttime - $laststart;
     	    $minorstats->{'age'} = $thisage;
-    	    $minorstats->{'startage'} = $firststart;
-    	    $minorstats->{'endage'} = $laststart;
+    	    $minorstats->{'startage'} = $laststart;
+    	    $minorstats->{'endage'} = $firststart;
+    		$minorstats->{'ptrans'} = $thistrans;
     	    if ($thistrans == 0) {
         		$techdetails .= '<br>minor setting to n/a' . "\n";
         		push(@minorlist, 'n/a'); 
         		push(@minordetaillist, 'n/a'); 
         		push(@minordev, 'n/a');
-        		$minorstats->{'ptrans'} = 0;
     	    }
     	    else {
         		my $losspercent = ($thistrans - $thisrecv) / $thistrans * 100;
         		my $stddev = stddev(@minorsamples);
         		$minorstats->{'list'} = sprintf("%.2f", $losspercent);
-        		$minorstats->{'ptrans'} = $thistrans;
         		$minorstats->{'precv'} = $thisrecv;
         		$minorstats->{'plosspercent'} = $losspercent;
         		$minorstats->{'ploss'} = $thistrans - $thisrecv;
@@ -430,20 +422,19 @@ sub process_datum($) {
     	    $firststart = $reportstarttime - $firststart;
     	    $laststart = $reportstarttime - $laststart;
     	    $majorstats->{'age'} = $thisage;
-    	    $majorstats->{'startage'} = $firststart;
-    	    $majorstats->{'endage'} = $laststart;
+    	    $majorstats->{'startage'} = $laststart;
+    	    $majorstats->{'endage'} = $firststart;
     	    $majorstats->{'factor'} = $majortime / $minortime;
+    		$majorstats->{'ptrans'} = $thistrans;
     	    if ($thistrans == 0) {
         		$techdetails .= '<br>major setting to n/a' . "\n";
         		push(@majorlist, 'n/a'); 
         		push(@majordev, 'n/a');
-        		$majorstats->{'ptrans'} = 0;
     	    }
     	    else {
         		my $losspercent = ($thistrans - $thisrecv) / $thistrans * 100;
         		my $stddev = stddev(@majorsamples);
         		$majorstats->{'list'} = sprintf("%.2f", $losspercent);
-        		$majorstats->{'ptrans'} = $thistrans;
         		$majorstats->{'precv'} = $thisrecv;
         		$majorstats->{'plosspercent'} = $losspercent;
         		$majorstats->{'ploss'} = $thistrans - $thisrecv;
