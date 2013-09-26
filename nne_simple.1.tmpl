@@ -13,7 +13,7 @@
 </head>
 <body>
 This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at [% reporttime %]. This report is updated every five minutes.
-
+<!-- How to not show sites with 'struct' in the name? -->
 <table border="1" style="border:none;border-collapse:collapse">
 [% FOREACH site IN sites %]
     <tr>
@@ -24,6 +24,7 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
 [% END %]
 </table>
 
+<!-- How to alternate left, right sides of table for sites -->
 <table border="1" style="border:none;border-collapse:collapse">
 <tr>
 <td style="vertical-align: top">
