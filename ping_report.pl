@@ -67,8 +67,6 @@ my $majortime = 900;
 my $reporthumantime = localtime($reportstarttime);
 my @reporttime = localtime($reportstarttime);
 
-my @finalhtml;
-my @simplehtml;
 my @simplesummary;
 
 # datumstats holds the pieces that will go into "site"
@@ -108,7 +106,6 @@ my $ttvars = {};
 sub logmsg($$) {
     my $msg = shift;
     my $die = shift;
-    push(@finalhtml, $msg);
     if ($die == 1) {
 	finalize_html();
 	die $msg;
@@ -725,11 +722,7 @@ sub process_file($$) {
     	    $pingtimes = join(':', @these_times);
     	}
     
-    	unless ($pingtimes =~ /\S/) {
-    	    push(@finalhtml, '<!-- For $file, <Pingtimes> is empty. -->' . "\n");
-    	}
-    	
-    	push(@finalhtml, '<!-- set bins - ' . $filemodtime . ':' . $file . ' pt:' . $ptrans . ' pr:' . $precv . ' rawsamp:' . $pingtimes ."-->\n") ;
+
     	$bins{$filemodtime} = $ptrans . ':' . $precv; 
     	$rawsamples{$filemodtime} = $pingtimes;
     	
@@ -952,24 +945,6 @@ if (-d $datadir) {
     if (opendir(PARENT, $datadir)) {
 	my @data;
 	my $ent;
-	push (@finalhtml, '<html><title>' . $sitename 
-	    .  ' Network Status - Detail</title><body>');
-	push (@finalhtml, 'This report <a href="' . $siteurl . $htmlfilename 
-	    . '"><b>' . $siteurl . $htmlfilename . '</b></a> generated starting at ' 
-	    . $reporthumantime . ". This report is updated every five minutes.\n");
-	push (@finalhtml, '<p>See <a href="https://helpdesk.nnenews.com/projects' 
-	    . '/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk ' 
-	    . ' for documentation (requires login).');
-	{
-	    my $year = $reporttime[5] + 1900;
-	    my $month = $reporttime[4] + 1;
-	    my $day = $reporttime[3];
-	    my $hour = $reporttime[2];
-	    my $url = sprintf($siteurl . '/%d/%d/%d/%d.html', $year, $month
-	        , $day, $hour) ;	    
-	    push (@finalhtml, '<p>For historic access to this report, see <a href="'
-	        .$url . '">' . $url . '</a>');
-	}
 	while ($ent = readdir(PARENT)) {
 	    unless ($ent =~ m/[^[:xdigit:]]/) {
 		my $datum;
@@ -995,54 +970,39 @@ if (-d $datadir) {
 	{
 	    my $key;
 	    my $alt = 0;
-	    push(@simplehtml, '<table border="1" style="border:none;border-collapse:collapse">');
+#	    push(@simplehtml, '<table border="1" style="border:none;border-collapse:collapse">');
 	    foreach $key (sort keys %datumreports) {
-		push (@finalhtml, $datumreports{$key});
-		if ($datumreportsimple{$key} =~ /\S/) {
-		    if ($alt == 0) {
-			push(@simplehtml, '<tr>');
-		    }
-		    push(@simplehtml, '<td style="vertical-align: top">');
-		    push(@simplehtml, '<!-- ' . $key .  ' -->');
-		    push (@simplehtml, $datumreportsimple{$key});
-		    push(@simplehtml, '</td>');
-		    if ($alt == 0) {
-			$alt = 1;
-		    }
-		    else {
-			$alt = 0;
-			push(@simplehtml, '</tr>');
-		    }
-		}
+    		if ($datumreportsimple{$key} =~ /\S/) {
+    		    if ($alt == 0) {
+#    			push(@simplehtml, '<tr>');
+    		    }
+#    		    push(@simplehtml, '<td style="vertical-align: top">');
+#    		    push(@simplehtml, '<!-- ' . $key .  ' -->');
+#    		    push (@simplehtml, $datumreportsimple{$key});
+#    		    push(@simplehtml, '</td>');
+    		    if ($alt == 0) {
+    			$alt = 1;
+    		    }
+    		    else {
+    			$alt = 0;
+#    			push(@simplehtml, '</tr>');
+    		    }
+    		}
 	    }
-	    push(@simplehtml, '</table>');
+#	    push(@simplehtml, '</table>');
 	}
-	push (@finalhtml, '<hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>'
-	    , '<tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>'
-	    , '<tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>'
-	    , '<tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>'
-	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
-	    , '</table>'
-	    , '<hr>Note about netlength: this is half of the distance light could travel in a vacuum during the fastest ping time. ' 
-	      . "Since the packets travel via a mix of copper as electrical impules and fiber as light pulses for the majority of their travel distance, "
-	      . "thier flighttime will always be slower than speed of light through a vacuum. Additionally, routing and switching equipment will always "
-	      . "impose a significant overhead, so the netlength is only a very crude measurement."
-	      . "For reference, Google Maps shows a driving distance from CM to Chandler of 2633miles or 4237km, and an estimate of travel time at highway speeds of 41hrs." 
-	    
-	);
-	push (@finalhtml, '</body></html>');
-	push (@simplehtml, '<hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>'
-	    , '<tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>'
-	    , '<tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>'
-	    , '<tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>'
-	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
-	    , '</table>'
-	);
-	push (@simplehtml, '<a href="' . $siteurl . $htmlfilename . '">More technical details</a> are available if needed.');
-	push (@simplehtml, '</body></html>');
+#	push (@simplehtml, '<hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>'
+#	    , '<tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>'
+#	    , '<tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>'
+#	    , '<tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>'
+#	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
+#	    , '</table>'
+#	);
+#	push (@simplehtml, '<a href="' . $siteurl . $htmlfilename . '">More technical details</a> are available if needed.');
+#	push (@simplehtml, '</body></html>');
     }
     else {
-	logmsg("Unable to open datadirectory '$datadir', aborting.\n",1);
+    	logmsg("Unable to open datadirectory '$datadir', aborting.\n",1);
     }
 }
 else {
