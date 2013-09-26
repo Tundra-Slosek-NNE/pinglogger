@@ -15,7 +15,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     [% END %]
     </b>
     <br>Overall jitter (smaller is better): 
-    [% FILTER format('%.2f%%') %]
+    [% FILTER format('%.2f') %]
         [% site.jitter %]
     [% END %]
     <br>Tests completed in the last hour (60 is nominal. 59 or 61 is
@@ -58,7 +58,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     [% FOREACH minor IN site.minors %]
         <td>
         [% IF minor.ptrans > 0 %]
-            [% FILTER format('%.2f%%') %]
+            [% FILTER format('%.2f') %]
                 [% minor.jitter %]
             [% END %]
         [% ELSE %]
@@ -93,7 +93,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     [% FOREACH major IN site.majors %]
         <td colspan="[% major.factor %]">
         [% IF major.ptrans > 0 %]
-            [% FILTER format('%.2f%%') %]
+            [% FILTER format('%.2f') %]
                 [% major.jitter %]
             [% END %]
         [% ELSE %]
