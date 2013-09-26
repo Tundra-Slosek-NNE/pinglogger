@@ -1,0 +1,45 @@
+# Datadir is where the XML files that have been stored by ping_logger live
+# Should be the same value as in the ping_logger.conf file.
+# It should be possible to use the same configuration file for both ping_logger
+# and ping_report
+datadir=/home/tslosek/tmp_pinglogger/datadir
+
+# This is the parent directory of where HTML files will be written out
+htmlpath=/home/tslosek/tmp_pinglogger/htmlout
+
+# This is the name of the HTML file for the 'simple' report
+simplefile=index.html
+
+# This is the name of the HTML file for the 'detailed' report
+detailfile=detail.html
+
+# Within the HTML files, this is the URL to reach htmlpath
+siteurl=http://localhost/
+
+# Name of the site (depreciated, just code it in the template)
+sitename=NNE
+
+# Directory that holds all template files
+templatepath=/home/tslosek/pinglogger/
+
+# Template::Toolkit formatted file for simple report
+simpletemplate=nne_simple.1.tmpl
+
+# Template::Toolkit formatted file for detailed report
+detailtemplate=nne_detail.1.tmpl
+
+# Set to 'no' if you don't want a copy of the detail file made by date and hour
+# within htmlpath
+keepdetailhistory=yes
+
+# When assembling a report, this is the number of seconds into the past to 
+# include. 
+timerange=3600
+
+# For minor level summary in the report, this is the number of second in each
+# bucket
+minortime=300
+
+# For major level summary in the report, this is the number of second in each
+# bucket
+majortime=900
