@@ -216,7 +216,7 @@ frame is 15 minutes.
     }
     my $templateengine = Template->new({INCLUDE_PATH=>$templatepath});
     if ($templateengine->process($detailtemplate, $ttvars, $htmlfile)) {
-        if ($templateengine->process($simpletemplate, $ttvars, $simplehtmlfile) {
+        if ($templateengine->process($simpletemplate, $ttvars, $simplehtmlfile)) {
         }
         else {
             # If we can process the detail but not the simple, what should we do?
