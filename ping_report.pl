@@ -309,11 +309,13 @@ sub process_datum($) {
         
         # Populate the minor list	
     	my $i = $reportstarttime;
+    	my $thisage;
     	@minorlist = ();
     	@minordetaillist = ();
     	@minorsamples = ();       
     	@minordev = ();       
     	
+    	$thisage = 0;
     	while($i > $datumcutofftime) {
     	    my $minorstats;
     	    my $thistrans = 0;
@@ -353,7 +355,7 @@ sub process_datum($) {
     	    }
     	    $firststart = $reportstarttime - $firststart;
     	    $laststart = $reportstarttime - $laststart;
-    	    $minorstats->{'age'} = int($reportstarttime - $i / $minortime) * $minortime / 60;
+    	    $minorstats->{'age'} = $thisage;
     	    $minorstats->{'startage'} = $firststart;
     	    $minorstats->{'endage'} = $laststart;
     	    if ($thistrans == 0) {
@@ -381,6 +383,7 @@ sub process_datum($) {
     	    }
     	    $i -= $minortime;
             push (@{$datumstats->{'minors'}}, $minorstats);
+            $thisage += int($minortime / 60) ;
     	}
     	
     	# Populate the major list
@@ -389,6 +392,7 @@ sub process_datum($) {
     	@majordetaillist = ();
     	@majorsamples = ();       
     	@majordev = ();       
+    	$thisage = 0;
     	while($i > $datumcutofftime) {
     	    my $majorstats;
     	    my $thistrans = 0;
@@ -425,7 +429,7 @@ sub process_datum($) {
     	    }
     	    $firststart = $reportstarttime - $firststart;
     	    $laststart = $reportstarttime - $laststart;
-    	    $majorstats->{'age'} = int($reportstarttime - $i / $majortime) * $majortime / 60;
+    	    $majorstats->{'age'} = $thisage;
     	    $majorstats->{'startage'} = $firststart;
     	    $majorstats->{'endage'} = $laststart;
     	    $majorstats->{'factor'} = $majortime / $minortime;
@@ -454,6 +458,7 @@ sub process_datum($) {
     	    $i -= $majortime;
     	    
             push (@{$datumstats->{'majors'}}, $majorstats);
+            $thisage += int($majortime / 60) ;
     	}
     	
     	{
