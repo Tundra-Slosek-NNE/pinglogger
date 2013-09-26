@@ -491,8 +491,7 @@ sub process_datum($) {
     	    my $numberformatter = new Number::Format;
     	    $datumstats->{'netlength'} = $numberformatter->format_number((299792 * $datumstats->{'rttmin'} / 2 / 1000), 1);
     	    $datumstats->{'rttavg'} = $datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'}; 
-    	    );
-    	    
+
     	    
     	    unless ($datumstats->{'description'} =~ /struct/g) {
     	        # TODO figure out how not to send structural items to simple 
