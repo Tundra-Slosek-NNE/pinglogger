@@ -1,5 +1,17 @@
 <html><head>
-<title>NNE Network Status - Detail</title></head><body class=" hasGoogleVoiceExt">
+<title>NNE Network Status - Detail</title>
+<style>
+.normal {color:green}
+.normal-large {color:green;font-size:x-large}
+.unreach {color:blue}
+.unreach-large {color:blue;font-size:x-large}
+.warn {color:orange}
+.warn-large {color:orange;font-size:x-large}
+.error {color:red}
+.error-large {color:red;font-size:x-large}
+</style>
+</head>
+<body>
 This report <a href="./NNE Network Status - Detail_files/NNE Network Status - Detail.html"><b>https://helpdesk.nnenews.com/status/details.html</b></a> generated starting at Tue Sep 24 14:25:02 2013. This report is updated every five minutes.
 
 <p>See <a href="https://helpdesk.nnenews.com/projects/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk for documentation (requires login).
@@ -8,9 +20,11 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
 </p>
 
 [% FOREACH site IN sites %]
-    <hr><div style="[% site.style %]">[% site.description %]</div>
+    <hr><div style="[% site.style %]-large">[% site.description %]</div>
     <br>Overall packet loss: <b>
+    <div style="[% site.style %]">
     [% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]
+    </div>
     </b>
     <br>Overall jitter (smaller is better): 
     [% FILTER format('%.2f') %][% site.jitter %][% END %]
