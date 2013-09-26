@@ -81,6 +81,8 @@ my $datadir = "/var/pinglogger/";
 my $simplehtmlfilename = "index.html";
 my $htmlfilename = "details.html";
 my $htmlpath = "/var/www/status/";
+my $templatepath;
+my $keepdetailhistory = 1;
 
 my %datumreports;
 my %datumreportsimple;
@@ -209,7 +211,10 @@ frame is 15 minutes.
 
 =cut
 
-    my $templateengine = Template->new();
+    unless (-d $templatepath) {
+        die "Template path '$templatepath' is not a directory, aborting.\n";
+    }
+    my $templateengine = Template->new({INCLUDE_PATH=>$templatepath});
     if ($templateengine->process($detailtemplate, $ttvars, $htmlfile)) {
     #if (open(HTML, '>'.$htmlfile)) {
     #	print HTML join("\n", @finalhtml);
@@ -227,21 +232,23 @@ frame is 15 minutes.
     	my $month = $reporttime[4] + 1;
     	my $day = $reporttime[3];
     	my $hour = $reporttime[2];
-    	my $mypath = File::Spec->catdir($htmlpath, $year);
-    	unless (-d $mypath) {
-    	    mkdir $mypath;	    
+    	if ($keepdetailhistory == 1) {
+        	my $mypath = File::Spec->catdir($htmlpath, $year);
+        	unless (-d $mypath) {
+        	    mkdir $mypath;	    
+        	}
+        	$mypath = File::Spec->catdir($mypath, $month);
+        	unless (-d $mypath) {
+        	    mkdir $mypath;
+        	}
+        	$mypath = File::Spec->catdir($mypath, $day);
+        	unless (-d $mypath) {
+        	    mkdir $mypath;
+        	}
+        	if (-d $mypath) {
+        	    copy($htmlfile, File::Spec->catfile($mypath, $hour . '.html'));
+        	}	
     	}
-    	$mypath = File::Spec->catdir($mypath, $month);
-    	unless (-d $mypath) {
-    	    mkdir $mypath;
-    	}
-    	$mypath = File::Spec->catdir($mypath, $day);
-    	unless (-d $mypath) {
-    	    mkdir $mypath;
-    	}
-    	if (-d $mypath) {
-    	    copy($htmlfile, File::Spec->catfile($mypath, $hour . '.html'));
-    	}	
     }
     else {
 	    die "Error processing template for writing to output file, aborting with error:\n" . $templateengine->error() . "\n";
@@ -787,6 +794,11 @@ file that will be used as the source for 'detail' point of view
 =item I<majortime> = Number of seconds in a major division (NNE uses 900, ie
 15min)
 
+=item I<templatepath> = The parent directory for the template files
+
+=item I<keepdetailhistory> = A yes/no (defaults to yes) flag of if a copy of 
+the detail HTML file should be made and stored by date
+
 =back
 
 ping_report.pl is not tested for the following cases: 
@@ -824,6 +836,11 @@ ping_report.pl is not tested for the following cases:
 	                $htmlpath = $value;
 	            }
 	        }
+	        elsif (lc $key eq 'templatepath') {
+	            if (-d $value) {
+	                $templatepath = $value;
+	            }
+	        }
 	        elsif (lc $key eq 'siteurl') {
 	            $siteurl = $value;
 	        }
@@ -845,6 +862,16 @@ ping_report.pl is not tested for the following cases:
 	        elsif (lc $key eq 'timerange') {
 	            unless ($value =~ /\D/) {
 	                $timerange = $value;
+	            }
+	        }
+	        elsif (lc $key eq 'keepdetailhistory') {
+	            if (
+	                (lc $value eq 'n') || 
+	                (lc $value eq 'no') ||
+	                ($value == 0) ||
+	                (lc $value eq 'false')
+	            ){
+	                $keepdetailhistory = 0;
 	            }
 	        }
 	        elsif (lc $key eq 'minortime') {
