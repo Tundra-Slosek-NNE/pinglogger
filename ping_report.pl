@@ -366,7 +366,7 @@ sub process_datum($) {
     	    else {
         		my $losspercent = ($thistrans - $thisrecv) / $thistrans * 100;
         		my $stddev = stddev(@minorsamples);
-        		$minorstats->{'list'} = sprintf("%.2f", $loss);
+        		$minorstats->{'list'} = sprintf("%.2f", $losspercent);
         		$minorstats->{'ptrans'} = $thistrans;
         		$minorstats->{'precv'} = $thisrecv;
         		$minorstats->{'plosspercent'} = $losspercent;
@@ -376,7 +376,7 @@ sub process_datum($) {
         		$minorstats->{'jitter'} = (0 + $stddev);
         		push(@minordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $losspercent, $thistrans - $thisrecv, $laststart, $firststart));
         		$techdetails .= '<br>minor stddev(' . join(',', @minorsamples) . ') =' . $stddev . "\n";
-        		push(@minorlist, sprintf("%.2f", $loss));
+        		push(@minorlist, sprintf("%.2f", $losspercent));
         		push(@minordev, $stddev);
     	    }
     	    $i -= $minortime;
@@ -438,7 +438,7 @@ sub process_datum($) {
     	    else {
         		my $losspercent = ($thistrans - $thisrecv) / $thistrans * 100;
         		my $stddev = stddev(@majorsamples);
-        		$majorstats->{'list'} = sprintf("%.2f", $loss);
+        		$majorstats->{'list'} = sprintf("%.2f", $losspercent);
         		$majorstats->{'ptrans'} = $thistrans;
         		$majorstats->{'precv'} = $thisrecv;
         		$majorstats->{'plosspercent'} = $losspercent;
@@ -448,7 +448,7 @@ sub process_datum($) {
         		$majorstats->{'jitter'} = (0 + $stddev);
         		push(@majordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $losspercent, $thistrans - $thisrecv, $laststart, $firststart));
         		$techdetails .= '<br>major stddev(' . join(',', @majorsamples) . ') =' . $stddev . "\n";
-        		push(@majorlist, sprintf("%.2f", $loss));
+        		push(@majorlist, sprintf("%.2f", $losspercent));
         		push(@majordev, $stddev);
     	    }
     	    $i -= $majortime;
