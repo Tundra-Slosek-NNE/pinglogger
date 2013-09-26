@@ -20,11 +20,11 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
 </p>
 
 [% FOREACH site IN sites %]
-    <hr><div style="[% site.style %]-large">[% site.description %]</div>
+    <hr><div class="[% site.style %]-large">[% site.description %]</div>
     <br>Overall packet loss: <b>
-    <div style="[% site.style %]">
+    <span class="[% site.style %]">
     [% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]
-    </div>
+    </span>
     </b>
     <br>Overall jitter (smaller is better): 
     [% FILTER format('%.2f') %][% site.jitter %][% END %]
@@ -122,10 +122,10 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
 [% END %]
 
 <hr>Color scale: <table style="max-width:50%"><tbody><tr><th>Color</th><th>Meaning</th><th>Impact</th></tr>
-<tr><td><div style="color:green">Green</div></td><td>0% packet loss</td><td>Network working smoothly</td></tr>
-<tr><td><div style="color:orange">Orange</div></td><td>More than 0% and less than 1% packet loss</td><td>Possible some slight lag</td></tr>
-<tr><td><div style="color:red">Red</div></td><td>More than 1% and less than 100% packet loss</td><td>Likely this will create significant lag</td></tr>
-<tr><td><div style="color:black">Black</div></td><td>100% packet loss - could be site down or complete network disconnect or network blocked</td><td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</td></tr>
+<tr><td><div style="normal">Green</div></td><td>0% packet loss</td><td>Network working smoothly</td></tr>
+<tr><td><div style="warn">Orange</div></td><td>More than 0% and less than 1% packet loss</td><td>Possible some slight lag</td></tr>
+<tr><td><div style="error">Red</div></td><td>More than 1% and less than 100% packet loss</td><td>Likely this will create significant lag</td></tr>
+<tr><td><div style="unreach">Blue</div></td><td>100% packet loss - could be site down or complete network disconnect or network blocked</td><td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</td></tr>
 </tbody></table>
 <hr>Note about netlength: this is half of the distance light could travel in a vacuum during the fastest ping time. Since the packets travel via a mix of copper as electrical impules and fiber as light pulses for the majority of their travel distance, thier flighttime will always be slower than speed of light through a vacuum. Additionally, routing and switching equipment will always impose a significant overhead, so the netlength is only a very crude measurement.For reference, Google Maps shows a driving distance from CM to Chandler of 2633miles or 4237km, and an estimate of travel time at highway speeds of 41hrs.
 </body></html>
