@@ -10,14 +10,10 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
 [% FOREACH site IN sites %]
     <hr><div style="[% site.style %]">[% site.description %]</div>
     <br>Overall packet loss: <b>
-    [% FILTER format('%.2f%%') %]
-        [% site.plosspercent %]
-    [% END %]
+    [% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]
     </b>
     <br>Overall jitter (smaller is better): 
-    [% FILTER format('%.2f') %]
-        [% site.jitter %]
-    [% END %]
+    [% FILTER format('%.2f') %][% site.jitter %][% END %]
     <br>Tests completed in the last hour (60 is nominal. 59 or 61 is
     acceptable time quantization error, outside of that is a problem with
     reporting station): [% site.pingtests_considered %]
@@ -25,9 +21,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     <br>Total packet sent: [% site.ptrans %]
     <br>Total packets received: [% site.precv %]
     <br>Average ping time (ms): 
-    [% FILTER format('%.2f') %]
-        [% site.rttavg %]
-    [% END %]
+    [% FILTER format('%.2f') %][% site.rttavg %][% END %]
     <br>Fastest ping time (ms): [% site.rttmin %]
     <br>netlength (km): 
     [% site.netlength %]
@@ -44,9 +38,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
             <td>
             [% IF minor.ptrans > 0 %]
                 ([% minor.ptrans %] - [% minor.precv %]) / [% minor.ptrans %] * 100 = 
-                [% FILTER format('%.2f%%') %]
-                    [% minor.plosspercent %]
-                [% END %]
+                [% FILTER format('%.2f%%') %][% minor.plosspercent %][% END %]
                 <br> [% minor.ploss %] lost packets <br> [
                 [% minor.startage %] - [% minor.endage %] ] 
             [% ELSE %]
@@ -61,9 +53,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     [% FOREACH minor IN site.minors %]
         <td>
         [% IF minor.ptrans > 0 %]
-            [% FILTER format('%.2f') %]
-                [% minor.jitter %]
-            [% END %]
+            [% FILTER format('%.2f') %][% minor.jitter %][% END %]
         [% ELSE %]
             n/a
         [% END %]
@@ -78,9 +68,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
             [% IF major.ptrans > 0 %]
                 ([% major.ptrans %] - 
                 [% major.precv %]) / [% major.ptrans %] * 100 = 
-                [% FILTER format('%.2f%%') %]
-                    [% major.plosspercent %]
-                [% END %]
+                [% FILTER format('%.2f%%') %][% major.plosspercent %][% END %]
                 <br> 
                 [% major.ploss %] lost packets <br> [ [% major.startage %] - 
                 [% major.endage %] ]
@@ -96,9 +84,7 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     [% FOREACH major IN site.majors %]
         <td colspan="[% major.factor %]">
         [% IF major.ptrans > 0 %]
-            [% FILTER format('%.2f') %]
-                [% major.jitter %]
-            [% END %]
+            [% FILTER format('%.2f') %][% major.jitter %][% END %]
         [% ELSE %]
             n/a
         [% END %]
@@ -108,17 +94,13 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
     
     [% IF site.ploss > 0 %]
         <tr align="center"><td>Loss</td><td colspan="12">
-        [% FILTER format('%.2f%%') %]
-            [% site.plosspercent %]
-        [% END %]
+        [% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]
         <br>[% site.ploss %] lost packets</td></tr>
     [% END %]
     
     
     <tr align="center"><td>Jitter/Std Dev</td><td colspan="12">
-    [% FILTER format('%.2f') %]
-        [% site.jitter %]
-    [% END %]
+    [% FILTER format('%.2f') %][% site.jitter %][% END %]
     </td></tr></tbody></table></div>
     <br>Data files that go into this report can be found in 
     [% site.datadir %] with a last modified time between [% site.firsttime %]
