@@ -67,8 +67,7 @@ my $majortime = 900;
 my $reporthumantime = localtime($reportstarttime);
 my @reporttime = localtime($reportstarttime);
 
-# datumstats holds the pieces that will go into "site"
-my $datumstats;
+my $site;
 my $description;
 my $siteurl;
 my $sitename;
@@ -88,7 +87,7 @@ my %rawsamples;
 
 my $htmlfile;
 my $simplehtmlfile;
-my $datumcutofftime;
+my $sitecutofftime;
 my $simpletemplate;
 my $detailtemplate;
 
@@ -282,16 +281,16 @@ frame is 15 minutes.
 }
 
 
-sub process_datum($) {
-    my $datum = shift;   
-    $datumstats = {};
-    my @datumsamples;
+sub process_site($) {
+    my $site = shift;   
+    $site = {};
+    my @sitesamples;
     my @minorsamples;
     my @majorsamples;
     my $laststart;
     my $firststart;
-    if (opendir(DATUM, $datum)) {
-        $datumstats->{'datadir'} = $datum;
+    if (opendir(SITE, $site)) {
+        $site->{'datadir'} = $site;
     	%bins = ();
     	$laststart = 0;
     	
@@ -300,12 +299,12 @@ sub process_datum($) {
         	my $ent;
         	my $oldestfile;
         	my $newestfile;
-        	while($ent = readdir(DATUM)) {
-        	    my $filename = File::Spec->catfile($datum, $ent);
+        	while($ent = readdir(SITE)) {
+        	    my $filename = File::Spec->catfile($site, $ent);
         	    if (-f $filename) {
             		if ($ent =~ m/\d+\.xml/) {
             		    my @filestats = stat($filename);
-            		    if ( ($filestats[9] > $datumcutofftime) &&
+            		    if ( ($filestats[9] > $sitecutofftime) &&
             		         ($filestats[9] < $reportstarttime)
             		       ){
             		        if ($filestats[9] > $newestfile) {
@@ -317,7 +316,7 @@ sub process_datum($) {
             		        if ($oldestfile > $filestats[9]) {
             		            $oldestfile = $filestats[9];
             		        }   
-                			process_file($datum, $filename, $filestats[9]);
+                			process_file($site, $filename, $filestats[9]);
             		    }
             		    else {
                 			# silently ignore files older than the cutoff time
@@ -332,10 +331,10 @@ sub process_datum($) {
         	    }
         	}
         	
-        	$datumstats->{'firsttime'} = scalar localtime($oldestfile);
-        	$datumstats->{'lasttime'} = scalar localtime($newestfile);
+        	$site->{'firsttime'} = scalar localtime($oldestfile);
+        	$site->{'lasttime'} = scalar localtime($newestfile);
         }
-    	closedir(DATUM);
+    	closedir(SITE);
         
         # Populate the minor list	
     	my $i = $reportstarttime;
@@ -343,7 +342,7 @@ sub process_datum($) {
     	@minorsamples = ();       
 
     	$thisage = 0;
-    	while($i > $datumcutofftime) {
+    	while($i > $sitecutofftime) {
     	    my $minorstats;
     	    my $thistrans = 0;
     	    my $thisrecv = 0;
@@ -357,7 +356,7 @@ sub process_datum($) {
     		    my $arecv;
     		    ($atrans, $arecv) = split(':', $bins{$start});
     		    @minorsamples = split(':', $rawsamples{$start});
-    		    push(@datumsamples, @minorsamples);
+    		    push(@sitesamples, @minorsamples);
     		    $thistrans += $atrans;
     		    $thisrecv += $arecv;
     		    if ($firststart) {
@@ -398,7 +397,7 @@ sub process_datum($) {
         		$minorstats->{'jitter'} = (0 + $stddev);
     	    }
     	    $i -= $minortime;
-            push (@{$datumstats->{'minors'}}, $minorstats);
+            push (@{$site->{'minors'}}, $minorstats);
             $thisage += int($minortime / 60) ;
     	}
     	
@@ -406,7 +405,7 @@ sub process_datum($) {
     	$i = $reportstarttime;
     	@majorsamples = ();       
     	$thisage = 0;
-    	while($i > $datumcutofftime) {
+    	while($i > $sitecutofftime) {
     	    my $majorstats;
     	    my $thistrans = 0;
     	    my $thisrecv = 0;
@@ -462,46 +461,46 @@ sub process_datum($) {
     	    }
     	    $i -= $majortime;
     	    
-            push (@{$datumstats->{'majors'}}, $majorstats);
+            push (@{$site->{'majors'}}, $majorstats);
             $thisage += int($majortime / 60) ;
     	}
     	
     	{
-    	    $datumstats->{'jitter'} = (0+stddev(@datumsamples));
+    	    $site->{'jitter'} = (0+stddev(@sitesamples));
 
 # Start of code to determine style to display the current site in
-    	    if ($datumstats->{'plosspercent'} == 0) {	    
-        		$datumstats->{'style'} = 'normal';
+    	    if ($site->{'plosspercent'} == 0) {	    
+        		$site->{'style'} = 'normal';
     	    }
-    	    elsif ($datumstats->{'plosspercent'} < 1) {
-        		$datumstats->{'style'} = 'warn';
+    	    elsif ($site->{'plosspercent'} < 1) {
+        		$site->{'style'} = 'warn';
     	    }
-    	    elsif ($datumstats->{'plosspercent'} < 100) {
-        		$datumstats->{'style'} = 'error';
+    	    elsif ($site->{'plosspercent'} < 100) {
+        		$site->{'style'} = 'error';
     	    }
     	    else {
-        		$datumstats->{'style'} = 'unreach';
+        		$site->{'style'} = 'unreach';
     	    }
 # End of code to determine the style to display the current site in
 
     	    my $numberformatter = new Number::Format;
-    	    $datumstats->{'netlength'} = $numberformatter->format_number((299792 * $datumstats->{'rttmin'} / 2 / 1000), 1);
-    	    $datumstats->{'rttavg'} = $datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'}; 
+    	    $site->{'netlength'} = $numberformatter->format_number((299792 * $site->{'rttmin'} / 2 / 1000), 1);
+    	    $site->{'rttavg'} = $site->{'rttavgaccum'} / $site->{'pingtests_considered'}; 
 
     	    
-    	    unless ($datumstats->{'description'} =~ /struct/g) {
+    	    unless ($site->{'description'} =~ /struct/g) {
     	        # TODO figure out how not to send structural items to simple 
     	    }
     	}
-	    push (@{$ttvars->{'sites'}}, $datumstats);
+	    push (@{$ttvars->{'sites'}}, $site);
     }
     else {
-	logmsg("process_datum: Error opening '$datum' as a directory,  skipping.\n",0);
+	logmsg("process_site: Error opening '$site' as a directory,  skipping.\n",0);
     }
 }
 
 sub process_file($$) {
-    my $datum = shift;
+    my $site = shift;
     my $file = shift;
     my $filemodtime = shift;
     my $twig = XML::Twig->new();
@@ -631,57 +630,57 @@ sub process_file($$) {
     	$bins{$filemodtime} = $ptrans . ':' . $precv; 
     	$rawsamples{$filemodtime} = $pingtimes;
     	
-    	$datumstats->{'description'} = $description;
-    	$datumstats->{'target'} = $target;
+    	$site->{'description'} = $description;
+    	$site->{'target'} = $target;
     	
-    	if (exists($datumstats->{'pingtests_considered'})) {
-    	    $datumstats->{'pingtests_considered'} += 1;
+    	if (exists($site->{'pingtests_considered'})) {
+    	    $site->{'pingtests_considered'} += 1;
     	}
     	else {
-    	    $datumstats->{'pingtests_considered'} = 1;
+    	    $site->{'pingtests_considered'} = 1;
     	}
     	
-    	if (exists($datumstats->{'rttmax'})) {
-    	    if ($datumstats->{'rttmax'} < $rttmax) {
-    		$datumstats->{'rttmax'} = $rttmax;		
+    	if (exists($site->{'rttmax'})) {
+    	    if ($site->{'rttmax'} < $rttmax) {
+    		$site->{'rttmax'} = $rttmax;		
     	    }
     	}
     	else {
-    	    $datumstats->{'rttmax'} = $rttmax;
+    	    $site->{'rttmax'} = $rttmax;
     	}
     	
-    	if (exists($datumstats->{'rttmin'})) {
-    	    if ($datumstats->{'rttmin'} > $rttmin) {
-    		$datumstats->{'rttmin'} = $rttmin;		
+    	if (exists($site->{'rttmin'})) {
+    	    if ($site->{'rttmin'} > $rttmin) {
+    		$site->{'rttmin'} = $rttmin;		
     	    }
     	}
     	else {
-    	    $datumstats->{'rttmin'} = $rttmin;
+    	    $site->{'rttmin'} = $rttmin;
     	}
     	
-    	if (exists($datumstats->{'rttavgaccum'})) {
-    	    $datumstats->{'rttavgaccum'} += $rttavg;
+    	if (exists($site->{'rttavgaccum'})) {
+    	    $site->{'rttavgaccum'} += $rttavg;
     	}
     	else {
-    	    $datumstats->{'rttavgaccum'} = $rttavg;
+    	    $site->{'rttavgaccum'} = $rttavg;
     	}
     	
-    	if (exists($datumstats->{'ptrans'})) {
-    	    $datumstats->{'ptrans'} += $ptrans;
+    	if (exists($site->{'ptrans'})) {
+    	    $site->{'ptrans'} += $ptrans;
     	}
     	else {
-    	    $datumstats->{'ptrans'} = $ptrans;
+    	    $site->{'ptrans'} = $ptrans;
     	}
     	
-    	if (exists($datumstats->{'precv'})) {
-    	    $datumstats->{'precv'} += $precv;
+    	if (exists($site->{'precv'})) {
+    	    $site->{'precv'} += $precv;
     	}
     	else {
-    	    $datumstats->{'precv'} = $precv;
+    	    $site->{'precv'} = $precv;
     	}
     	
-       	$datumstats->{'plosspercent'} =  ($datumstats->{'ptrans'} - $datumstats->{'precv'}) / $datumstats->{'ptrans'} * 100;
-       	$datumstats->{'ploss'} = $datumstats->{'ptrans'} - $datumstats->{'precv'};
+       	$site->{'plosspercent'} =  ($site->{'ptrans'} - $site->{'precv'}) / $site->{'ptrans'} * 100;
+       	$site->{'ploss'} = $site->{'ptrans'} - $site->{'precv'};
 
     }	
     else {
@@ -842,20 +841,20 @@ ping_report.pl is not tested for the following cases:
 }
 close(CONF);
 
-$datumcutofftime = $reportstarttime - $timerange;
+$sitecutofftime = $reportstarttime - $timerange;
 $simplehtmlfile = File::Spec->catfile($htmlpath, $simplehtmlfilename);
 $htmlfile = File::Spec->catfile($htmlpath, $htmlfilename);
 
 if (-d $datadir) {
     if (opendir(PARENT, $datadir)) {
-    	my @data;
+    	my @sites;
     	my $ent;
     	while ($ent = readdir(PARENT)) {
     	    unless ($ent =~ m/[^[:xdigit:]]/) {
-    		my $datum;
-    		$datum = File::Spec->catdir($datadir, $ent); 
-    		if (-d $datum) {
-    		    push (@data, $datum); 
+    		my $site;
+    		$site = File::Spec->catdir($datadir, $ent); 
+    		if (-d $site) {
+    		    push (@sites, $site); 
     		}
     		else {
     		    # silently ignore non directories
@@ -867,9 +866,9 @@ if (-d $datadir) {
     	}
     	closedir(PARENT);
     	{
-    	    my $datum;
-    	    foreach $datum (@data) {
-        		process_datum($datum);
+    	    my $site;
+    	    foreach $site (@sites) {
+        		process_site($site);
     	    }
     	}
     }
