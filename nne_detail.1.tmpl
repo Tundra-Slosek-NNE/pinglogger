@@ -15,7 +15,10 @@
 This report <a href="./NNE Network Status - Detail_files/NNE Network Status - Detail.html"><b>https://helpdesk.nnenews.com/status/details.html</b></a> generated starting at Tue Sep 24 14:25:02 2013. This report is updated every five minutes.
 
 <p>See <a href="https://helpdesk.nnenews.com/projects/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk for documentation (requires login).
-</p><p>For historic access to this report, see <a href="https://helpdesk.nnenews.com/status/2013/9/24/14.html">https://helpdesk.nnenews.com/status/2013/9/24/14.html</a>
+</p><p>
+[% IF archpath %]
+For historic access to this an near reports, see <a href="[% archpathprev %]">Previous</a> | <a href="[% archpath %]">[% archpath %]</a> | <a href="[% archpathnext %]">Next</a>
+[% END %]
 
 </p>
 
@@ -122,10 +125,10 @@ This report <a href="./NNE Network Status - Detail_files/NNE Network Status - De
 [% END %]
 
 <hr>Color scale: <table style="max-width:50%"><tbody><tr><th>Color</th><th>Meaning</th><th>Impact</th></tr>
-<tr><td><div style="normal">Green</div></td><td>0% packet loss</td><td>Network working smoothly</td></tr>
-<tr><td><div style="warn">Orange</div></td><td>More than 0% and less than 1% packet loss</td><td>Possible some slight lag</td></tr>
-<tr><td><div style="error">Red</div></td><td>More than 1% and less than 100% packet loss</td><td>Likely this will create significant lag</td></tr>
-<tr><td><div style="unreach">Blue</div></td><td>100% packet loss - could be site down or complete network disconnect or network blocked</td><td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</td></tr>
+<tr><td><span class="normal">Green</span></td><td>0% packet loss</td><td>Network working smoothly</td></tr>
+<tr><td><span class="warn">Orange</span></td><td>More than 0% and less than 1% packet loss</td><td>Possible some slight lag</td></tr>
+<tr><td><span class="error">Red</span></td><td>More than 1% and less than 100% packet loss</td><td>Likely this will create significant lag</td></tr>
+<tr><td><span class="unreach">Blue</span></td><td>100% packet loss - could be site down or complete network disconnect or network blocked</td><td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</td></tr>
 </tbody></table>
 <hr>Note about netlength: this is half of the distance light could travel in a vacuum during the fastest ping time. Since the packets travel via a mix of copper as electrical impules and fiber as light pulses for the majority of their travel distance, thier flighttime will always be slower than speed of light through a vacuum. Additionally, routing and switching equipment will always impose a significant overhead, so the netlength is only a very crude measurement.For reference, Google Maps shows a driving distance from CM to Chandler of 2633miles or 4237km, and an estimate of travel time at highway speeds of 41hrs.
 </body></html>
