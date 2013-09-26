@@ -15,7 +15,7 @@
 This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at [% reporttime %]. This report is updated every five minutes.
 
 <table border="1" style="border:none;border-collapse:collapse">
-[% FOREACH site in sites %]
+[% FOREACH site IN sites %]
     <tr>
     <td><span class="[% site.style %]-large">[% site.description %]</span>
     <td>Loss: <b>[% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]</b>
@@ -24,7 +24,9 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
 [% END %]
 </table>
 
-
+<table border="1" style="border:none;border-collapse:collapse">
+<tr>
+<td style="vertical-align: top">
 [% FOREACH site IN sites %]
     <hr><div class="[% site.style %]-large">[% site.description %]</div>
     <br>Overall packet loss: <b>
@@ -36,9 +38,8 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
     [% FILTER format('%.2f') %][% site.jitter %][% END %]
     <br>Average ping time (ms): 
     [% FILTER format('%.2f') %][% site.rttavg %][% END %]
-    <br>Tests completed in the last hour (60 is nominal. 59 or 61 is
-    acceptable time quantization error, outside of that is a problem with
-    reporting station): [% site.pingtests_considered %]
+    <br>Tests completed in the last hour (between 59 or 61 is ok,
+    outside of that is a problem): [% site.pingtests_considered %]
     <br><div style="margin: 10px"><table border="1" style="border:none;border-collapse:collapse"><tbody>
     <tr align="center"><td>Minutes Ago</td>
     [% FOREACH minor IN site.minors %] 
@@ -101,6 +102,8 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
     </tbody></table></div>
     For all numbers, smaller is better
 [% END %]
+</tr>
+</table>
 
 <hr>Color scale: <table style="max-width:50%"><tbody><tr><th>Color</th><th>Meaning</th><th>Impact</th></tr>
 <tr><td><span class="normal">Green</span></td><td>0% packet loss</td><td>Network working smoothly</td></tr>
