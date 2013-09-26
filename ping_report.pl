@@ -282,15 +282,15 @@ frame is 15 minutes.
 
 
 sub process_site($) {
-    my $site = shift;   
+    my $sitedir = shift;   
     $site = {};
     my @sitesamples;
     my @minorsamples;
     my @majorsamples;
     my $laststart;
     my $firststart;
-    if (opendir(SITE, $site)) {
-        $site->{'datadir'} = $site;
+    if (opendir(SITE, $sitedir)) {
+        $site->{'datadir'} = $sitedir;
     	%bins = ();
     	$laststart = 0;
     	
@@ -300,7 +300,7 @@ sub process_site($) {
         	my $oldestfile;
         	my $newestfile;
         	while($ent = readdir(SITE)) {
-        	    my $filename = File::Spec->catfile($site, $ent);
+        	    my $filename = File::Spec->catfile($sitedir, $ent);
         	    if (-f $filename) {
             		if ($ent =~ m/\d+\.xml/) {
             		    my @filestats = stat($filename);
@@ -316,7 +316,7 @@ sub process_site($) {
             		        if ($oldestfile > $filestats[9]) {
             		            $oldestfile = $filestats[9];
             		        }   
-                			process_file($site, $filename, $filestats[9]);
+                			process_file($sitedir, $filename, $filestats[9]);
             		    }
             		    else {
                 			# silently ignore files older than the cutoff time
@@ -495,12 +495,12 @@ sub process_site($) {
 	    push (@{$ttvars->{'sites'}}, $site);
     }
     else {
-	logmsg("process_site: Error opening '$site' as a directory,  skipping.\n",0);
+	logmsg("process_site: Error opening '$sitedir' as a directory,  skipping.\n",0);
     }
 }
 
 sub process_file($$) {
-    my $site = shift;
+    my $sitedir = shift;
     my $file = shift;
     my $filemodtime = shift;
     my $twig = XML::Twig->new();
@@ -851,10 +851,10 @@ if (-d $datadir) {
     	my $ent;
     	while ($ent = readdir(PARENT)) {
     	    unless ($ent =~ m/[^[:xdigit:]]/) {
-    		my $site;
-    		$site = File::Spec->catdir($datadir, $ent); 
-    		if (-d $site) {
-    		    push (@sites, $site); 
+    		my $sitedir;
+    		$sitedir = File::Spec->catdir($datadir, $ent); 
+    		if (-d $sitedir) {
+    		    push (@sites, $sitedir); 
     		}
     		else {
     		    # silently ignore non directories
@@ -866,9 +866,9 @@ if (-d $datadir) {
     	}
     	closedir(PARENT);
     	{
-    	    my $site;
-    	    foreach $site (@sites) {
-        		process_site($site);
+    	    my $sitedir;
+    	    foreach $sitedir (@sites) {
+        		process_site($sitedir);
     	    }
     	}
     }
