@@ -117,7 +117,8 @@ sub logmsg($$) {
 
 sub finalize_html() {
     $html_finalized = 1;
-    
+    my $detailarchivepath;
+    my $hour;
 =pod 
 
 =head1 TEMPLATE VARIABLES
@@ -127,6 +128,22 @@ Template files use Template::Toolkit (see http://template-toolkit.org )
 The following variables are available for a template to use:
     
 =over
+
+=item I<archpath> Will be omitted if keepdetailhistory is 'no'. If present, 
+this will be the full URL to get to the persistent archive copy of the current
+detail file.
+
+=item I<archpathprev> Only present when I<archpath> is present. This is the 
+calculated previous detail archive. If your I<timerange> is less than an hour, 
+this will be wrong at least some of the time since it is based on the assumption 
+of hour+ timerange; in this case don't use this variable in your templates.
+Note that this does not assure that the URL points to an actual available file. 
+
+=item I<archpathnext> Only present when I<archpath> is present. This is the 
+calculated next detail archive. If your I<timerange> is less than an hour, 
+this will be wrong at least some of the time since it is based on the assumption 
+of hour+ timerange; in this case don't use this variable in your templates.
+Note that this does not assure that the URL points to an actual available file. 
 
 =item I<sites> a description sorted array of I<site>. I<site> is the 
 summary of data for the entire hour for a given source.
@@ -211,20 +228,11 @@ frame is 15 minutes.
 
 =cut
 
-    unless (-d $templatepath) {
-        die "Template path '$templatepath' is not a directory, aborting.\n";
-    }
-    my $templateengine = Template->new({INCLUDE_PATH=>$templatepath});
-    if ($templateengine->process($detailtemplate, $ttvars, $htmlfile)) {
-        if ($templateengine->process($simpletemplate, $ttvars, $simplehtmlfile)) {
-        }
-        else {
-            # If we can process the detail but not the simple, what should we do?
-        }   
+    {
     	my $year = $reporttime[5] + 1900;
     	my $month = $reporttime[4] + 1;
     	my $day = $reporttime[3];
-    	my $hour = $reporttime[2];
+    	$hour = $reporttime[2];
     	if ($keepdetailhistory == 1) {
         	my $mypath = File::Spec->catdir($htmlpath, $year);
         	unless (-d $mypath) {
@@ -239,9 +247,39 @@ frame is 15 minutes.
         	    mkdir $mypath;
         	}
         	if (-d $mypath) {
-        	    copy($htmlfile, File::Spec->catfile($mypath, $hour . '.html'));
-        	}	
+        	    $detailarchivepath = $mypath;
+        	}
+        	$ttvars->{'archpath'} = $siteurl . '/' . $year . '/' . $month . '/'
+        	    . $day . '/' . $hour . '.html';
+            my @nextreporttime;
+            @nextreporttime = localtime($reportstarttime + $timerange);
+            $ttvars->{'archpathnext'} = $siteurl . '/' 
+                . ($nextreporttime[5] + 1900) . '/' 
+                . ($nextreporttime[4] + 1) . '/'
+        	    . $nextreporttime[3] . '/'  
+        	    . $nextreporttime[2] . '.html';
+            my @prevreporttime;
+            @prevreporttime = localtime($reportstarttime - $timerange);
+            $ttvars->{'archpathprev'} = $siteurl . '/' 
+                . ($prevreporttime[5] + 1900) . '/' 
+                . ($prevreporttime[4] + 1) . '/'
+        	    . $prevreporttime[3] . '/'  
+        	    . $prevreporttime[2] . '.html';
     	}
+    }  
+    unless (-d $templatepath) {
+        die "Template path '$templatepath' is not a directory, aborting.\n";
+    }
+    my $templateengine = Template->new({INCLUDE_PATH=>$templatepath});
+    if ($templateengine->process($detailtemplate, $ttvars, $htmlfile)) {
+        if ($templateengine->process($simpletemplate, $ttvars, $simplehtmlfile)) {
+        }
+        else {
+            # If we can process the detail but not the simple, what should we do?
+        }   
+    	if ($keepdetailhistory == 1) {
+    	    copy($htmlfile, File::Spec->catfile($detailarchivepath, $hour . '.html'));
+        }
     }
     else {
 	    die "Error processing template for writing to output file, aborting with error:\n" . $templateengine->error() . "\n";
