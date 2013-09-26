@@ -1,72 +1,112 @@
- <html>
-    <head> 
-        <title>NNE Network Status</title>
-    </head>
-    <body>
-	    This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at <TMPL_VAR reporttime>. This report is updated every five minutes.
-	    <table border="1" style="border:none;border-collapse:collapse">
-	    <TMPL_LOOP simplesummary>
-	    <tr>
-		    <td><TMPL_VAR displaydesc>
-		    <td>Loss: <b><TMPL_VAR loss>%</b>
-		    <td>Jitter: <TMPL_VAR datumstddev>
-		    </tr>
-	    </TMPL_LOOP simplesummary>
-	    </table><p>
-	    <TMPL_LOOP simplereports>
-	       	    
-	       	    <table border="1" style="border:none;border-collapse:collapse">
-			<tr>
-		    }
-		    <td style="vertical-align: top">
-		    <!-- <TMPL_VAR key> -->
-		    <TMPL_LOOP simpledatums>
-		    <TMPL_VAR displaydesc> 
-		    <br>Overall packet loss: <b><TMPL_VAR overall_ploss>%</b>
-		    <br>Overall jitter (smaller is better): <TMPL_VAR stddev>
-		    <br>Average ping time (ms): <TMPL_VAR avgping>
-		    <br>Tests completed in the last hour (between 59-61 is ok, outside of that is a problem): <TMPL_VAR testscompleted>
-		    <TMPL_LOOP breakdowntable>
-		    <br><div style="margin: 10px">
-	        <table border="1" style="border:none;border-collapse:collapse"><tr align="center"><td>Minutes Ago
-	        <TMPL_LOOP minutesago>
-	        <td><TMPL_VAR minutes>
-	        </TMPL_LOOP minutesago>
-	        </tr>
-	        <tr align="center"><td>Loss as %<td>
-	        <TMPL_LOOP minorlist>
-	        <td><TMPL_VAR minorloss>
-	        </TMPL_LOOP minorlist>
-	        </tr>
-	        <tr align="center"><td>Jitter/Std Dev<td>
-	        <TMPL_LOOP minordevlist>
-	        <td><TMPL_VAR minordev>
-	        </TMPL_LOOP minordevlist>
-	        </tr>
-	        <tr align="center"><td>Loss as %<td colspan="3">
-	        <TMPL_LOOP majorlist>
-	        <td><TMPL_VAR majorloss>
-	        </TMPL_LOOP majorlist>
-	        </tr>
-	        <tr align="center"><td>Jitter/Std Dev<td colspan="3">
-	        <TMPL_LOOP majordevlist>
-	        <td><TMPL_VAR majordev>
-	        </TMPL_LOOP majordevlist>
-	        </tr>
-	        </table>For all numbers, smaller is better</div>
-		    </TMPL_LOOP breakdowntable>
-		    </TMPL_LOOP simpledatums>
-		    </td>
-		    </tr>
-			
-    </table>
-	    </TMPL_LOOP simplereports>
-	    <hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>
-	    <tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>
-	    <tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>
-	    <tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>
-	    <tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>
-	    </table>
-    	<a href="https://helpdesk.nnenews.com/status/details.html">More technical details</a> are available if needed.
-    </body>
-</html>
+ <html><head>
+<title>NNE Network Status</title>
+<style>
+.normal {color:green}
+.normal-large {color:green;font-size:x-large}
+.unreach {color:blue}
+.unreach-large {color:blue;font-size:x-large}
+.warn {color:orange}
+.warn-large {color:orange;font-size:x-large}
+.error {color:red}
+.error-large {color:red;font-size:x-large}
+</style>
+</head>
+<body>
+This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at [% reporttime %]. This report is updated every five minutes.
+
+<table border="1" style="border:none;border-collapse:collapse">
+[% FOREACH site in sites %]
+    <tr>
+    <td><span class="[% site.style %]-large">[% site.description %]</span>
+    <td>Loss: <b>[% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]</b>
+    <td>Jitter: [% FILTER format('%.2f') %][% site.jitter %][% END %]
+    </tr>
+[% END %]
+</table>
+
+
+[% FOREACH site IN sites %]
+    <hr><div class="[% site.style %]-large">[% site.description %]</div>
+    <br>Overall packet loss: <b>
+    <span class="[% site.style %]">
+    [% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]
+    </span>
+    </b>
+    <br>Overall jitter (smaller is better): 
+    [% FILTER format('%.2f') %][% site.jitter %][% END %]
+    <br>Average ping time (ms): 
+    [% FILTER format('%.2f') %][% site.rttavg %][% END %]
+    <br>Tests completed in the last hour (60 is nominal. 59 or 61 is
+    acceptable time quantization error, outside of that is a problem with
+    reporting station): [% site.pingtests_considered %]
+    <br><div style="margin: 10px"><table border="1" style="border:none;border-collapse:collapse"><tbody>
+    <tr align="center"><td>Minutes Ago</td>
+    [% FOREACH minor IN site.minors %] 
+        <td>[% minor.age %]</td>
+    [% END %]
+    </tr>
+    
+    [% IF site.ploss > 0 %]
+        <tr align="center"><td>Loss as %</td>
+        [% FOREACH minor IN site.minors %]
+            <td>
+            [% IF minor.ptrans > 0 %]
+                [% FILTER format('%.2f') %][% minor.plosspercent %][% END %]
+            [% ELSE %]
+                n/a
+            [% END %]
+            </td>
+        [% END %]
+        </tr>
+    [% END %]
+    
+    <tr align="center"><td>Jitter/Std Dev</td>
+    [% FOREACH minor IN site.minors %]
+        <td>
+        [% IF minor.ptrans > 0 %]
+            [% FILTER format('%.2f') %][% minor.jitter %][% END %]
+        [% ELSE %]
+            n/a
+        [% END %]
+        </td>
+    [% END %]
+    </tr>
+    
+    [% IF site.ploss > 0 %]
+        <tr align="center"><td>Loss as %</td>
+        [% FOREACH major IN site.majors %]
+            <td colspan="[% major.factor %]">
+            [% IF major.ptrans > 0 %]
+                [% FILTER format('%.2f') %][% major.plosspercent %][% END %]
+            [% ELSE %]
+                n/a
+            [% END %]
+            </td>
+        [% END %]
+        </tr>
+    [% END %]
+    
+    <tr align="center"><td>Jitter/Std Dev</td>
+    [% FOREACH major IN site.majors %]
+        <td colspan="[% major.factor %]">
+        [% IF major.ptrans > 0 %]
+            [% FILTER format('%.2f') %][% major.jitter %][% END %]
+        [% ELSE %]
+            n/a
+        [% END %]
+        </td>
+    [% END %]
+    </tr>
+    
+    </tbody></table></div>
+    For all numbers, smaller is better
+[% END %]
+
+<hr>Color scale: <table style="max-width:50%"><tbody><tr><th>Color</th><th>Meaning</th><th>Impact</th></tr>
+<tr><td><span class="normal">Green</span></td><td>0% packet loss</td><td>Network working smoothly</td></tr>
+<tr><td><span class="warn">Orange</span></td><td>More than 0% and less than 1% packet loss</td><td>Possible some slight lag</td></tr>
+<tr><td><span class="error">Red</span></td><td>More than 1% and less than 100% packet loss</td><td>Likely this will create significant lag</td></tr>
+<tr><td><span class="unreach">Blue</span></td><td>100% packet loss - could be site down or complete network disconnect or network blocked</td><td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</td></tr>
+</tbody></table>
+<a href="https://helpdesk.nnenews.com/status/details.html">More technical details</a> are available if needed.
+</body></html>
