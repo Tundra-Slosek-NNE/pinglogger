@@ -145,6 +145,8 @@ this will be wrong at least some of the time since it is based on the assumption
 of hour+ timerange; in this case don't use this variable in your templates.
 Note that this does not assure that the URL points to an actual available file. 
 
+=item I<reporttime> Human formatted local time when the report was generated
+
 =item I<sites> a description sorted array of I<site>. I<site> is the 
 summary of data for the entire hour for a given source.
 
@@ -229,6 +231,7 @@ frame is 15 minutes.
 =cut
 
     {
+        $ttvars->{'reporttime'} = $reporthumantime;
     	my $year = $reporttime[5] + 1900;
     	my $month = $reporttime[4] + 1;
     	my $day = $reporttime[3];
@@ -302,6 +305,7 @@ sub process_datum($) {
     my $laststart;
     my $firststart;
     if (opendir(DATUM, $datum)) {
+        $datumstats->{'datadir'} = $datum;
     	my $techopen = '<!-- <div style="color:Gainsboro;font-size:x-small">';
     	my $techclose = '</div> -->';
     	my $techdetails = $techopen;
@@ -311,32 +315,46 @@ sub process_datum($) {
     	$laststart = 0;
     	
     	# Read all the files 
-    	my $ent;
-    	while($ent = readdir(DATUM)) {
-    	    my $filename = File::Spec->catfile($datum, $ent);
-    	    if (-f $filename) {
-        		if ($ent =~ m/\d+\.xml/) {
-        		    my @filestats = stat($filename);
-                    # TODO we should be testing for a time range, not just 
-                    # 'newer than cutoff' 
-        		    if ($filestats[9] > $datumcutofftime) {
-            			process_file($datum, $filename, $filestats[9]);
-        		    }
-        		    else {
-            			# silently ignore files older than the cutoff time
-        		    }
-        		}
-        		else {
-        		    # silently ignore files with non-digits in the name
-        		}
-    	    }
-    	    else {
-    		# silently ignore nonfiles
-    	    }
-    	}
+        {
+        	my $ent;
+        	my $oldestfile;
+        	my $newestfile;
+        	while($ent = readdir(DATUM)) {
+        	    my $filename = File::Spec->catfile($datum, $ent);
+        	    if (-f $filename) {
+            		if ($ent =~ m/\d+\.xml/) {
+            		    my @filestats = stat($filename);
+            		    if ( ($filestats[9] > $datumcutofftime) &&
+            		         ($filestats[9] < $reportstarttime)
+            		       ){
+            		        if ($filestats[9] > $newestfile) {
+            		            $newestfile = $filestats[9];
+            		        }
+            		        unless ($oldestfile) {
+            		            $oldestfile = $filestats[9];
+            		        }
+            		        if ($oldestfile > $filestats[9]) {
+            		            $oldestfile = $filestats[9];
+            		        }   
+                			process_file($datum, $filename, $filestats[9]);
+            		    }
+            		    else {
+                			# silently ignore files older than the cutoff time
+            		    }
+            		}
+            		else {
+            		    # silently ignore files that don't look like ours
+            		}
+        	    }
+        	    else {
+        		# silently ignore nonfiles
+        	    }
+        	}
+        	
+        	$datumstats->{'firsttime'} = scalar localtime($oldestfile);
+        	$datumstats->{'lasttime'} = scalar localtime($newestfile);
+        }
     	closedir(DATUM);
-    	
-    	
         
         # Populate the minor list	
     	my $i = $reportstarttime;
