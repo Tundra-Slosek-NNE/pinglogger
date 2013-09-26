@@ -457,7 +457,7 @@ sub process_datum($) {
     	}
     	
     	{
-    	    $datumstats->{'jitter'} = (0 + stddev(@datumsamples));
+    	    $datumstats->{'jitter'} = ((scalar stddev(@datumsamples))+1)-1;
     	    my $breakdowntable = '<br><div style="margin: 10px">'
     	      . '<table border="1" style="border:none;border-collapse:collapse"><tr align="center"><td>Minutes Ago<td>0<td>5<td>10<td>15<td>20<td>25<td>30<td>35<td>40<td>45<td>50<td>55</tr>'
     	      . '<tr align="center"><td>Loss as %<td>' . join('<td>', @minorlist) . '</tr>'
