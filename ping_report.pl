@@ -67,8 +67,6 @@ my $majortime = 900;
 my $reporthumantime = localtime($reportstarttime);
 my @reporttime = localtime($reportstarttime);
 
-my @simplesummary;
-
 # datumstats holds the pieces that will go into "site"
 my $datumstats;
 my $description;
@@ -81,9 +79,6 @@ my $htmlfilename = "details.html";
 my $htmlpath = "/var/www/status/";
 my $templatepath;
 my $keepdetailhistory = 1;
-
-my %datumreports;
-my %datumreportsimple;
 
 # next two use the file modification time as the key
 # bins holds precv and ptrans for every sample reported from ping_test
@@ -291,24 +286,13 @@ sub process_datum($) {
     my $datum = shift;   
     $datumstats = {};
     my @datumsamples;
-    my @minorlist;
-    my @minordetaillist;
-    my @minordev;
-    my @majorlist;
-    my @majordetaillist;
-    my @majordev;
     my @minorsamples;
     my @majorsamples;
     my $laststart;
     my $firststart;
     if (opendir(DATUM, $datum)) {
         $datumstats->{'datadir'} = $datum;
-    	my $techopen = '<!-- <div style="color:Gainsboro;font-size:x-small">';
-    	my $techclose = '</div> -->';
-    	my $techdetails = $techopen;
-    	$techdetails .= '<br>datum path: ' . $datum . "\n";
     	%bins = ();
-    	$techdetails .= '<br>bin keys: ' . join(':', keys %bins) . "\n";
     	$laststart = 0;
     	
     	# Read all the files 
@@ -356,11 +340,8 @@ sub process_datum($) {
         # Populate the minor list	
     	my $i = $reportstarttime;
     	my $thisage;
-    	@minorlist = ();
-    	@minordetaillist = ();
     	@minorsamples = ();       
-    	@minordev = ();       
-    	
+
     	$thisage = 0;
     	while($i > $datumcutofftime) {
     	    my $minorstats;
@@ -376,8 +357,6 @@ sub process_datum($) {
     		    my $arecv;
     		    ($atrans, $arecv) = split(':', $bins{$start});
     		    @minorsamples = split(':', $rawsamples{$start});
-    		    $techdetails .= '<br>Ping times for ' . $start . '=' 
-    		                    . $rawsamples{$start} . "\n" ;
     		    push(@datumsamples, @minorsamples);
     		    $thistrans += $atrans;
     		    $thisrecv += $arecv;
@@ -406,10 +385,6 @@ sub process_datum($) {
     	    $minorstats->{'endage'} = $firststart;
     		$minorstats->{'ptrans'} = $thistrans;
     	    if ($thistrans == 0) {
-        		$techdetails .= '<br>minor setting to n/a' . "\n";
-        		push(@minorlist, 'n/a'); 
-        		push(@minordetaillist, 'n/a'); 
-        		push(@minordev, 'n/a');
     	    }
     	    else {
         		my $losspercent = ($thistrans - $thisrecv) / $thistrans * 100;
@@ -421,10 +396,6 @@ sub process_datum($) {
         		$minorstats->{'laststart'} = $laststart;
         		$minorstats->{'firststart'} = $firststart;
         		$minorstats->{'jitter'} = (0 + $stddev);
-        		push(@minordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $losspercent, $thistrans - $thisrecv, $laststart, $firststart));
-        		$techdetails .= '<br>minor stddev(' . join(',', @minorsamples) . ') =' . $stddev . "\n";
-        		push(@minorlist, sprintf("%.2f", $losspercent));
-        		push(@minordev, $stddev);
     	    }
     	    $i -= $minortime;
             push (@{$datumstats->{'minors'}}, $minorstats);
@@ -433,10 +404,7 @@ sub process_datum($) {
     	
     	# Populate the major list
     	$i = $reportstarttime;
-    	@majorlist = ();
-    	@majordetaillist = ();
     	@majorsamples = ();       
-    	@majordev = ();       
     	$thisage = 0;
     	while($i > $datumcutofftime) {
     	    my $majorstats;
@@ -480,9 +448,6 @@ sub process_datum($) {
     	    $majorstats->{'factor'} = $majortime / $minortime;
     		$majorstats->{'ptrans'} = $thistrans;
     	    if ($thistrans == 0) {
-        		$techdetails .= '<br>major setting to n/a' . "\n";
-        		push(@majorlist, 'n/a'); 
-        		push(@majordev, 'n/a');
     	    }
     	    else {
         		my $losspercent = ($thistrans - $thisrecv) / $thistrans * 100;
@@ -494,10 +459,6 @@ sub process_datum($) {
         		$majorstats->{'laststart'} = $laststart;
         		$majorstats->{'firststart'} = $firststart;
         		$majorstats->{'jitter'} = (0 + $stddev);
-        		push(@majordetaillist, sprintf("(%d - %d) / %d * 100 = %.2f%% <br> %d lost packets <br> [ %d - %d ] \n", $thistrans, $thisrecv, $thistrans, $losspercent, $thistrans - $thisrecv, $laststart, $firststart));
-        		$techdetails .= '<br>major stddev(' . join(',', @majorsamples) . ') =' . $stddev . "\n";
-        		push(@majorlist, sprintf("%.2f", $losspercent));
-        		push(@majordev, $stddev);
     	    }
     	    $i -= $majortime;
     	    
@@ -507,34 +468,12 @@ sub process_datum($) {
     	
     	{
     	    $datumstats->{'jitter'} = (0+stddev(@datumsamples));
-    	    my $breakdowntable = '<br><div style="margin: 10px">'
-    	      . '<table border="1" style="border:none;border-collapse:collapse"><tr align="center"><td>Minutes Ago<td>0<td>5<td>10<td>15<td>20<td>25<td>30<td>35<td>40<td>45<td>50<td>55</tr>'
-    	      . '<tr align="center"><td>Loss as %<td>' . join('<td>', @minorlist) . '</tr>'
-    	      . '<tr align="center"><td>Jitter/Std Dev<td>' . join('<td>', @minordev) . '</tr>'
-    	      . '<tr align="center"><td>Loss as %<td colspan="3">' . join('<td colspan="3">' , @majorlist) . '</tr>'
-    	      . '<tr align="center"><td>Jitter/Std Dev<td colspan="3">' . join('<td colspan="3">' , @majordev) . '</tr>'
-    	      . '</table>For all numbers, smaller is better</div>';
-    	    my $detailbreakdowntable = '<br><div style="margin: 10px">'
-    	      . '<table border="1" style="border:none;border-collapse:collapse"><tr align="center"><td>Minutes Ago<td>0<td>5<td>10<td>15<td>20<td>25<td>30<td>35<td>40<td>45<td>50<td>55</tr>'
-    	      . '<tr align="center"><td>Loss<br>[Age range in s]<td>' . join('<td>', @minordetaillist) . '</tr>'
-    	      . '<tr align="center"><td>Jitter/Std Dev<td>' . join('<td>', @minordev) . '</tr>'
-    	      . '<tr align="center"><td>Loss<br>[Age range in s]<td colspan="3">' . join('<td colspan="3">' , @majordetaillist) . '</tr>'
-    	      . '<tr align="center"><td>Jitter/Std Dev<td colspan="3">' . join('<td colspan="3">' , @majordev) . '</tr>'
-    	      . '<tr align="center"><td>Loss<td colspan="12">' . $datumstats->{'plosspercent'} . '%<br>' . $datumstats->{'ploss'} . ' lost packets</tr>'  
-    	      . '<tr align="center"><td>Jitter/Std Dev<td colspan="12">' . $datumstats->{'jitter'} . '</tr>'
-    	      . '</table></div>';
-    
+
     	    my $displaydesc;
     	    
     	    if ($datumstats->{'plosspercent'} == 0) {	    
         		$displaydesc = '<div style="color:green;font-size:x-large">';
         		$datumstats->{'style'} = 'normal';
-        		$breakdowntable = '<br><div style="margin: 10px">'
-        		  . '<table border="1" style="border:none;border-collapse:collapse"><tr align="center"><td>Minutes Ago<td>0<td>5<td>10<td>15<td>20<td>25<td>30<td>35<td>40<td>45<td>50<td>55</tr>'
-        		  . '<tr align="center"><td>Jitter/Std Dev<td>' . join('<td>', @minordev) . '</tr>'
-        		  . '<tr align="center"><td>Jitter/Std Dev<td colspan="3">' . $majordev[0] . '<td colspan="3">' . $majordev[1] . '<td colspan="3">' . $majordev[2] . '<td colspan="3">' . $majordev[3] . '</tr>'
-        		  . '</table>For all numbers, smaller is better</div>';
-        		$detailbreakdowntable = $breakdowntable;
     	    }
     	    elsif ($datumstats->{'plosspercent'} < 1) {
         		$displaydesc = '<div style="color:orange;font-size:x-large">';
@@ -549,43 +488,14 @@ sub process_datum($) {
         		$datumstats->{'style'} = 'unreach';
     	    }
     	    $displaydesc .= $datumstats->{'description'} . '</div>';
-    	    $techdetails .= $techclose;
     	    my $numberformatter = new Number::Format;
     	    $datumstats->{'netlength'} = $numberformatter->format_number((299792 * $datumstats->{'rttmin'} / 2 / 1000), 1);
     	    $datumstats->{'rttavg'} = $datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'}; 
-    	    $datumreports{$datumstats->{'description'}} = join("\n" 
-    		, '<hr>' . $displaydesc 		
-    		, sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , $datumstats->{'plosspercent'})  
-    		, '<br>Overall jitter (smaller is better): ' . $datumstats->{'jitter'}
-    		, '<br>Tests completed in the last hour (60 is nominal. 59 or 61 is acceptable time quantization error, outside of that is a problem with reporting station): ' . $datumstats->{'pingtests_considered'}
-    		, '<br>Target: ' . $datumstats->{'target'} 
-    		, '<br>Total packet sent: ' . $datumstats->{'ptrans'}
-    		, '<br>Total packets received: ' . $datumstats->{'precv'}	
-    		, sprintf('<br>Average ping time (ms): %.2f' , ($datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'} ) )
-    		, sprintf('<br>Fastest ping time (ms): %.2f' , $datumstats->{'rttmin'} )
-    		, '<br>netlength (km): ', $datumstats->{'netlength'}
-    		, $detailbreakdowntable
-    		, $techdetails
-    		, '<br>Data files that go into this report can be found in ' . $datum . ' with a last modified time between ' . localtime($datumcutofftime) . ' and ' . localtime($reportstarttime) . ' (localtime)'
     	    );
     	    
     	    
     	    unless ($datumstats->{'description'} =~ /struct/g) {
-    		$datumreportsimple{$datumstats->{'description'}} = join("\n" 
-    		    , $displaydesc 
-    		    , sprintf('<br>Overall packet loss: <b>%.3f%%</b>' , $datumstats->{'plosspercent'} )  
-    		    , '<br>Overall jitter (smaller is better): ' . $datumstats->{'jitter'}
-    		    , sprintf('<br>Average ping time (ms): %.2f' , ($datumstats->{'rttavgaccum'} / $datumstats->{'pingtests_considered'} ) )
-    		    , '<br>Tests completed in the last hour (between 59-61 is ok, outside of that is a problem): ' . $datumstats->{'pingtests_considered'}		    
-    		    , $breakdowntable
-    		);
-    		push(@simplesummary, join("\n" 
-    		    , '<tr>'
-    		    , '<td>' . $displaydesc
-    		    , sprintf('<td>Loss: <b>%.3f%%</b>' , $datumstats->{'plosspercent'} )  
-    		    , '<td>Jitter: ' . $datumstats->{'jitter'}
-    		    , '</tr>'
-    		    ));
+    	        # TODO figure out how not to send structural items to simple 
     	    }
     	}
 	    push (@{$ttvars->{'sites'}}, $datumstats);
@@ -943,63 +853,30 @@ $htmlfile = File::Spec->catfile($htmlpath, $htmlfilename);
 
 if (-d $datadir) {
     if (opendir(PARENT, $datadir)) {
-	my @data;
-	my $ent;
-	while ($ent = readdir(PARENT)) {
-	    unless ($ent =~ m/[^[:xdigit:]]/) {
-		my $datum;
-		$datum = File::Spec->catdir($datadir, $ent); 
-		if (-d $datum) {
-		    push (@data, $datum); 
-		}
-		else {
-		    # silently ignore non directories
-		}
-	    }
-	    else {
-		# silently ignore anything with nonnumerics in the name
-	    }
-	}
-	closedir(PARENT);
-	{
-	    my $datum;
-	    foreach $datum (@data) {
-		process_datum($datum);
-	    }
-	}
-	{
-	    my $key;
-	    my $alt = 0;
-#	    push(@simplehtml, '<table border="1" style="border:none;border-collapse:collapse">');
-	    foreach $key (sort keys %datumreports) {
-    		if ($datumreportsimple{$key} =~ /\S/) {
-    		    if ($alt == 0) {
-#    			push(@simplehtml, '<tr>');
-    		    }
-#    		    push(@simplehtml, '<td style="vertical-align: top">');
-#    		    push(@simplehtml, '<!-- ' . $key .  ' -->');
-#    		    push (@simplehtml, $datumreportsimple{$key});
-#    		    push(@simplehtml, '</td>');
-    		    if ($alt == 0) {
-    			$alt = 1;
-    		    }
-    		    else {
-    			$alt = 0;
-#    			push(@simplehtml, '</tr>');
-    		    }
+    	my @data;
+    	my $ent;
+    	while ($ent = readdir(PARENT)) {
+    	    unless ($ent =~ m/[^[:xdigit:]]/) {
+    		my $datum;
+    		$datum = File::Spec->catdir($datadir, $ent); 
+    		if (-d $datum) {
+    		    push (@data, $datum); 
     		}
-	    }
-#	    push(@simplehtml, '</table>');
-	}
-#	push (@simplehtml, '<hr>Color scale: <table style="max-width:50%"><tr><th>Color<th>Meaning<th>Impact</tr>'
-#	    , '<tr><td><div style="color:green">Green</div><td>0% packet loss<td>Network working smoothly</tr>'
-#	    , '<tr><td><div style="color:orange">Orange</div><td>More than 0% and less than 1% packet loss<td>Possible some slight lag</tr>'
-#	    , '<tr><td><div style="color:red">Red</div><td>More than 1% and less than 100% packet loss<td>Likely this will create significant lag</tr>'
-#	    , '<tr><td><div style="color:black">Black</div><td>100% packet loss - could be site down or complete network disconnect or network blocked<td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</tr>'
-#	    , '</table>'
-#	);
-#	push (@simplehtml, '<a href="' . $siteurl . $htmlfilename . '">More technical details</a> are available if needed.');
-#	push (@simplehtml, '</body></html>');
+    		else {
+    		    # silently ignore non directories
+    		}
+    	    }
+    	    else {
+    		# silently ignore anything with nonnumerics in the name
+    	    }
+    	}
+    	closedir(PARENT);
+    	{
+    	    my $datum;
+    	    foreach $datum (@data) {
+        		process_datum($datum);
+    	    }
+    	}
     }
     else {
     	logmsg("Unable to open datadirectory '$datadir', aborting.\n",1);
