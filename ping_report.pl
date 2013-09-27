@@ -221,6 +221,8 @@ frame is 15 minutes.
 
 =cut
 
+    @{$ttvars->{'sites'}} = sort { $a->{'description'} cmp $b->{'description'} } @{$ttvars->{'sites'}};
+    
     {
         $ttvars->{'reporttime'} = $reporthumantime;
     	my $year = $reporttime[5] + 1900;
