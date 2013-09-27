@@ -15,7 +15,7 @@
 This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at [% reporttime %]. This report is updated every five minutes.
 <table border="1" style="border:none;border-collapse:collapse">
 [% FOREACH site IN sites %]
-    [% IF (matches = site.description.match('struct')) %]
+    [% IF site.description.match('struct') %]
     [% ELSE %]
         <tr>
         <td><span class="[% site.style %]-large">[% site.description %]</span>
@@ -31,7 +31,7 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
 [% leftcol = 1 %]
 [% FOREACH site IN sites %]
     <td style="vertical-align: top">
-    [% IF (matches = site.description.match('struct')) %]
+    [% IF site.description.match('struct') %]
     [% ELSE %]
         <hr><div class="[% site.style %]-large">[% site.description %]</div>
         <br>Overall packet loss: <b>
