@@ -14,10 +14,9 @@
 <body>
 This report <a href="https://helpdesk.nnenews.com/status/details.html"><b>https://helpdesk.nnenews.com/status/details.html</b></a> generated starting at [% reporttime %]. This report is updated every five minutes.
 
-<p>See <a href="https://helpdesk.nnenews.com/projects/nne/wiki/Pinglogger">Pinglogger wiki entry</a> in NNE helpdesk for documentation (requires login).
-</p><p>
+<p>
 [% IF archpath %]
-For historic access to this an near reports, see <a href="[% archpathprev %]">Previous</a> | <a href="[% archpath %]">[% archpath %]</a> | <a href="[% archpathnext %]">Next</a>
+For historic access to this and near reports, see <a href="[% archpathprev %]">Previous</a> | <a href="[% archpath %]">[% archpath %]</a> | <a href="[% archpathnext %]">Next</a>
 [% END %]
 
 </p>
@@ -131,4 +130,8 @@ For historic access to this an near reports, see <a href="[% archpathprev %]">Pr
 <tr><td><span class="unreach">Blue</span></td><td>100% packet loss - could be site down or complete network disconnect or network blocked</td><td>If the site is still reachable for normal use, then this indicates a blocking or configuration error.</td></tr>
 </tbody></table>
 <hr>Note about netlength: this is half of the distance light could travel in a vacuum during the fastest ping time. Since the packets travel via a mix of copper as electrical impules and fiber as light pulses for the majority of their travel distance, thier flighttime will always be slower than speed of light through a vacuum. Additionally, routing and switching equipment will always impose a significant overhead, so the netlength is only a very crude measurement.For reference, Google Maps shows a driving distance from CM to Chandler of 2633miles or 4237km, and an estimate of travel time at highway speeds of 41hrs.
+
+<p>See <a href="https://github.com/Tundra-Slosek-NNE/pinglogger">pinglogger</a> at GitHUB for current documentation and source files.
+</p>
+
 </body></html>
