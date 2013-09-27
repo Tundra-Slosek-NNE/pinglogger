@@ -13,14 +13,16 @@
 </head>
 <body>
 This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.nnenews.com/status/</b></a> generated starting at [% reporttime %]. This report is updated every five minutes.
-<!-- How to not show sites with 'struct' in the name? -->
 <table border="1" style="border:none;border-collapse:collapse">
 [% FOREACH site IN sites %]
-    <tr>
-    <td><span class="[% site.style %]-large">[% site.description %]</span>
-    <td>Loss: <b>[% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]</b>
-    <td>Jitter: [% FILTER format('%.2f') %][% site.jitter %][% END %]
-    </tr>
+    [% IF (matches = site.description.match('struct')) %]
+    [% ELSE %]
+        <tr>
+        <td><span class="[% site.style %]-large">[% site.description %]</span>
+        <td>Loss: <b>[% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]</b>
+        <td>Jitter: [% FILTER format('%.2f') %][% site.jitter %][% END %]
+        </tr>
+    [% END %]
 [% END %]
 </table>
 
@@ -29,79 +31,82 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
 <tr>
 <td style="vertical-align: top">
 [% FOREACH site IN sites %]
-    <hr><div class="[% site.style %]-large">[% site.description %]</div>
-    <br>Overall packet loss: <b>
-    <span class="[% site.style %]">
-    [% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]
-    </span>
-    </b>
-    <br>Overall jitter (smaller is better): 
-    [% FILTER format('%.2f') %][% site.jitter %][% END %]
-    <br>Average ping time (ms): 
-    [% FILTER format('%.2f') %][% site.rttavg %][% END %]
-    <br>Tests completed in the last hour (between 59 or 61 is ok,
-    outside of that is a problem): [% site.pingtests_considered %]
-    <br><div style="margin: 10px"><table border="1" style="border:none;border-collapse:collapse"><tbody>
-    <tr align="center"><td>Minutes Ago</td>
-    [% FOREACH minor IN site.minors %] 
-        <td>[% minor.age %]</td>
-    [% END %]
-    </tr>
-    
-    [% IF site.ploss > 0 %]
-        <tr align="center"><td>Loss as %</td>
+    [% IF (matches = site.description.match('struct')) %]
+    [% ELSE %]
+        <hr><div class="[% site.style %]-large">[% site.description %]</div>
+        <br>Overall packet loss: <b>
+        <span class="[% site.style %]">
+        [% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]
+        </span>
+        </b>
+        <br>Overall jitter (smaller is better): 
+        [% FILTER format('%.2f') %][% site.jitter %][% END %]
+        <br>Average ping time (ms): 
+        [% FILTER format('%.2f') %][% site.rttavg %][% END %]
+        <br>Tests completed in the last hour (between 59 or 61 is ok,
+        outside of that is a problem): [% site.pingtests_considered %]
+        <br><div style="margin: 10px"><table border="1" style="border:none;border-collapse:collapse"><tbody>
+        <tr align="center"><td>Minutes Ago</td>
+        [% FOREACH minor IN site.minors %] 
+            <td>[% minor.age %]</td>
+        [% END %]
+        </tr>
+        
+        [% IF site.ploss > 0 %]
+            <tr align="center"><td>Loss as %</td>
+            [% FOREACH minor IN site.minors %]
+                <td>
+                [% IF minor.ptrans > 0 %]
+                    [% FILTER format('%.2f') %][% minor.plosspercent %][% END %]
+                [% ELSE %]
+                    n/a
+                [% END %]
+                </td>
+            [% END %]
+            </tr>
+        [% END %]
+        
+        <tr align="center"><td>Jitter/Std Dev</td>
         [% FOREACH minor IN site.minors %]
             <td>
             [% IF minor.ptrans > 0 %]
-                [% FILTER format('%.2f') %][% minor.plosspercent %][% END %]
+                [% FILTER format('%.2f') %][% minor.jitter %][% END %]
             [% ELSE %]
                 n/a
             [% END %]
             </td>
         [% END %]
         </tr>
-    [% END %]
-    
-    <tr align="center"><td>Jitter/Std Dev</td>
-    [% FOREACH minor IN site.minors %]
-        <td>
-        [% IF minor.ptrans > 0 %]
-            [% FILTER format('%.2f') %][% minor.jitter %][% END %]
-        [% ELSE %]
-            n/a
+        
+        [% IF site.ploss > 0 %]
+            <tr align="center"><td>Loss as %</td>
+            [% FOREACH major IN site.majors %]
+                <td colspan="[% major.factor %]">
+                [% IF major.ptrans > 0 %]
+                    [% FILTER format('%.2f') %][% major.plosspercent %][% END %]
+                [% ELSE %]
+                    n/a
+                [% END %]
+                </td>
+            [% END %]
+            </tr>
         [% END %]
-        </td>
-    [% END %]
-    </tr>
-    
-    [% IF site.ploss > 0 %]
-        <tr align="center"><td>Loss as %</td>
+        
+        <tr align="center"><td>Jitter/Std Dev</td>
         [% FOREACH major IN site.majors %]
             <td colspan="[% major.factor %]">
             [% IF major.ptrans > 0 %]
-                [% FILTER format('%.2f') %][% major.plosspercent %][% END %]
+                [% FILTER format('%.2f') %][% major.jitter %][% END %]
             [% ELSE %]
                 n/a
             [% END %]
             </td>
         [% END %]
         </tr>
+        
+        </tbody></table></div>
+        For all numbers, smaller is better
     [% END %]
-    
-    <tr align="center"><td>Jitter/Std Dev</td>
-    [% FOREACH major IN site.majors %]
-        <td colspan="[% major.factor %]">
-        [% IF major.ptrans > 0 %]
-            [% FILTER format('%.2f') %][% major.jitter %][% END %]
-        [% ELSE %]
-            n/a
-        [% END %]
-        </td>
-    [% END %]
-    </tr>
-    
-    </tbody></table></div>
-    For all numbers, smaller is better
 [% END %]
 </tr>
 </table>
