@@ -26,11 +26,11 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
 [% END %]
 </table>
 
-<!-- How to alternate left, right sides of table for sites -->
 <table border="1" style="border:none;border-collapse:collapse">
 <tr>
-<td style="vertical-align: top">
+[% leftcol = 1 %]
 [% FOREACH site IN sites %]
+    <td style="vertical-align: top">
     [% IF (matches = site.description.match('struct')) %]
     [% ELSE %]
         <hr><div class="[% site.style %]-large">[% site.description %]</div>
@@ -106,6 +106,14 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
         
         </tbody></table></div>
         For all numbers, smaller is better
+        </td>
+        [% IF leftcol == 1 %]
+            [% leftcol = 0 %]
+        [% ELSE %]
+            [% leftcol = 1 %]
+            </tr>
+            <tr>
+        [% END %]
     [% END %]
 [% END %]
 </tr>
