@@ -25,7 +25,7 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
     [% END %]
 [% END %]
 </table>
-
+<p>
 <table border="1" style="border:none;border-collapse:collapse">
 <tr>
 [% leftcol = 1 %]
@@ -33,7 +33,7 @@ This report <a href="https://helpdesk.nnenews.com/status/"><b>https://helpdesk.n
     <td style="vertical-align: top">
     [% IF site.description.match('struct') %]
     [% ELSE %]
-        <hr><div class="[% site.style %]-large">[% site.description %]</div>
+        <div class="[% site.style %]-large">[% site.description %]</div>
         <br>Overall packet loss: <b>
         <span class="[% site.style %]">
         [% FILTER format('%.2f%%') %][% site.plosspercent %][% END %]
