@@ -21,3 +21,6 @@ view with a POD viewer, for example:
 
 perldoc ping_test.pl
 
+COOKBOOK
+
+See cookbook.html for step by step directions on setting up pinglogger
